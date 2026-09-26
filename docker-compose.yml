@@ -1,0 +1,90 @@
+name: enduro
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-enduro}
+      POSTGRES_USER: ${POSTGRES_USER:-enduro}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-enduro}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-enduro} -d ${POSTGRES_DB:-enduro}"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+    restart: unless-stopped
+
+  backend:
+    build: ./backend
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+      - static:/app/staticfiles
+      - media:/app/media
+    command: >
+      sh -c "python manage.py migrate --noinput &&
+             python manage.py collectstatic --noinput &&
+             python manage.py runserver 0.0.0.0:8000"
+    restart: unless-stopped
+
+  # Фоновые задачи: курсы, статусы платежей, KYC. На этапе 1 расписание пустое.
+  worker:
+    build: ./backend
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    volumes:
+      - ./backend:/app
+    command: python manage.py run_worker
+    restart: unless-stopped
+
+  frontend:
+    build: ./frontend
+    env_file: .env
+    volumes:
+      - ./frontend:/app
+      - node_modules:/app/node_modules
+    restart: unless-stopped
+
+  # Сервис курсов. Боевое место — зарубежный VPS, свой compose лежит в
+  # rate-service/docker-compose.yml. Здесь он поднимается только для разработки:
+  #     docker compose --profile rates up -d
+  # По умолчанию investing выключен: это headless Chromium и 2–3 минуты на вызов.
+  rates:
+    build: ./rate-service
+    profiles: ["rates"]
+    init: true
+    env_file: .env
+    environment:
+      RATE_SERVICE_TOKEN: ${RATE_SERVICE_TOKEN:-dev-token}
+      SOURCES_ENABLED: ${SOURCES_ENABLED:-rapira,alfabit_showcase}
+    restart: unless-stopped
+
+  nginx:
+    image: nginx:1.27-alpine
+    depends_on:
+      - backend
+      - frontend
+    ports:
+      - "${HTTP_PORT:-8080}:80"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - static:/var/www/static:ro
+      - media:/var/www/media:ro
+    # Временные файлы тела запроса не должны ложиться на диск: через этот
+    # эндпоинт на этапе 4 поедут фото паспортов.
+    tmpfs:
+      - /var/cache/nginx/client_body
+    restart: unless-stopped
+
+volumes:
+  pgdata:
+  static:
+  media:
+  node_modules:

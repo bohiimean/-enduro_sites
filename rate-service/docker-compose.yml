@@ -1,0 +1,20 @@
+# Боевой compose для зарубежного VPS. Российский сайт ходит сюда по HTTPS
+# с токеном; наружу порт не открываем — только локально, а TLS терминирует
+# nginx/caddy на том же хосте.
+name: enduro-rates
+
+services:
+  rates:
+    build: .
+    # init обязателен: Chromium в UC-режиме отвязывается от родителя, и без
+    # init-процесса зомби копятся до исчерпания PID.
+    init: true
+    env_file: .env
+    ports:
+      - "127.0.0.1:8001:8001"
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"

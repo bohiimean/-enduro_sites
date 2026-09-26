@@ -1,0 +1,72 @@
+:root {
+  --bg: #fbfbfa;
+  --fg: #1c1b19;
+  --muted: #71706b;
+  --line: #e4e2dd;
+  --accent: #b4491c;
+  --ok: #2f6f3e;
+  --err: #a32a1e;
+  --card: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #171614;
+    --fg: #eceae5;
+    --muted: #9b9891;
+    --line: #2e2c28;
+    --accent: #e4703f;
+    --ok: #6cbf7f;
+    --err: #e2705f;
+    --card: #1f1e1b;
+  }
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font: 16px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+.shell { max-width: 60rem; margin: 0 auto; padding: 0 1.25rem; }
+
+.header {
+  display: flex; align-items: baseline; justify-content: space-between;
+  gap: 1rem; padding: 1.5rem 0; border-bottom: 1px solid var(--line);
+}
+.logo { font-weight: 700; letter-spacing: .04em; text-transform: uppercase; text-decoration: none; color: var(--fg); }
+.nav { display: flex; gap: 1.25rem; }
+.nav a { color: var(--muted); text-decoration: none; }
+.nav a:hover, .nav a.router-link-active { color: var(--accent); }
+
+.main { padding: 2rem 0 3rem; }
+h1 { font-size: 1.9rem; margin: 0 0 .5rem; }
+h2 { font-size: 1.2rem; margin: 2rem 0 .75rem; }
+.lead { color: var(--muted); margin-top: 0; }
+.muted { color: var(--muted); }
+.price { font-weight: 600; }
+
+.card {
+  background: var(--card); border: 1px solid var(--line); border-radius: .6rem;
+  padding: 1rem 1.25rem; display: grid; gap: .4rem; margin: 1rem 0;
+}
+.card.ok { border-left: 3px solid var(--ok); }
+.card.err { border-left: 3px solid var(--err); }
+code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .9em; }
+
+.grid { list-style: none; padding: 0; display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(15rem, 1fr)); }
+.grid h3 { margin: 0; font-size: 1.05rem; }
+.grid a { color: var(--fg); text-decoration: none; }
+.grid a:hover h3 { color: var(--accent); }
+
+.badge { justify-self: start; font-size: .8rem; padding: .1rem .5rem; border-radius: 1rem; margin: 0; }
+.badge.in { background: color-mix(in srgb, var(--ok) 15%, transparent); color: var(--ok); }
+.badge.out { background: color-mix(in srgb, var(--muted) 15%, transparent); color: var(--muted); }
+
+.steps { color: var(--muted); }
+.steps em { color: var(--accent); font-style: normal; }
+
+.footer { border-top: 1px solid var(--line); padding: 1.25rem 0 2rem; color: var(--muted); font-size: .9rem; }
