@@ -16,3 +16,6 @@ node_modules/
 
 # macOS
 .DS_Store
+
+# Внутренний документ по проекту, в репозиторий не едет
+CLAUDE.md
