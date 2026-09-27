@@ -1,11 +1,14 @@
 <script setup lang="ts">
 import type { AccountPhone, Profile } from '~/composables/useAccount'
+import type { Payment } from '~/composables/usePayments'
 
 definePageMeta({ middleware: 'account' })
 
 useHead({ title: 'Личный кабинет' })
 
 const account = useAccount()
+const pay = usePayments()
+const payments = ref<Payment[]>([])
 const { logout } = useAuth()
 
 const profile = ref<Profile | null>(null)
@@ -24,6 +27,7 @@ async function load() {
   try {
     profile.value = await account.profile()
     name.value = profile.value.full_name
+    payments.value = await pay.payments()
   } catch (e) {
     loadError.value = (e as Error).message
   }
@@ -124,11 +128,24 @@ async function signOut() {
         </button>
       </form>
 
-      <h2>Заказы и оплата</h2>
+      <h2>Оплата юаня</h2>
+      <p><NuxtLink to="/account/pay" class="cta">Купить юань</NuxtLink></p>
+      <ul v-if="payments.length" class="phones">
+        <li v-for="payment in payments" :key="payment.id">
+          <NuxtLink :to="`/account/payments/${payment.id}`" class="card row plain">
+            <span>{{ Number(payment.amount_rub).toLocaleString('ru-RU') }} ₽ · {{ payment.amount_cny }} ¥</span>
+            <span class="badge" :class="payment.status === 'paid' ? 'in' : 'out'">
+              {{ payment.status_display }}
+            </span>
+            <span class="muted">{{ new Date(payment.created_at).toLocaleString('ru-RU') }}</span>
+          </NuxtLink>
+        </li>
+      </ul>
+
+      <h2>Заказы</h2>
       <p class="muted">
-        Оплата появится на следующем этапе, история заказов — после него. Показывать
-        заказы по неподтверждённому номеру мы не будем: он заявительный, и чужой
-        заказ так открываться не должен.
+        История заказов появится позже. Показывать заказы по неподтверждённому номеру
+        мы не будем: он заявительный, и чужой заказ так открываться не должен.
       </p>
     </template>
   </section>
@@ -137,4 +154,10 @@ async function signOut() {
 <style scoped>
 .row { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; margin: 0; }
 .phones { list-style: none; padding: 0; margin: 0; }
+.plain { color: var(--fg); text-decoration: none; }
+.plain:hover { border-color: var(--accent); }
+.cta {
+  display: inline-block; background: var(--accent); color: #fff;
+  padding: .5rem 1rem; border-radius: .4rem; text-decoration: none;
+}
 </style>
