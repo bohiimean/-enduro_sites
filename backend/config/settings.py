@@ -2,6 +2,7 @@
 умолчанию рассчитаны на локальный docker-compose."""
 import os
 import sys
+from decimal import Decimal
 from pathlib import Path
 
 import dj_database_url
@@ -225,6 +226,16 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_PAGINATION_CLASS": "rest_framework.pagination.LimitOffsetPagination",
     "PAGE_SIZE": 20,
+    # Мы за одним nginx: IP клиента — последний адрес в X-Forwarded-For.
+    "NUM_PROXIES": 1,
+    # Лимиты оплаты (payments/views.py). Живут в кеше — он общий для всех
+    # процессов gunicorn, см. CACHES.
+    "DEFAULT_THROTTLE_RATES": {
+        "kyc_user": "30/min",
+        "kyc_ip": "60/min",
+        "kyc_upload": "10/hour",
+        "payment_create": "10/hour",
+    },
 }
 
 # --- Cookie и HTTPS ---------------------------------------------------------
@@ -246,6 +257,18 @@ RATE_SERVICE_URL = os.environ.get("RATE_SERVICE_URL", "")
 RATE_SERVICE_TOKEN = os.environ.get("RATE_SERVICE_TOKEN", "")
 RATE_REFRESH_MINUTES = int(os.environ.get("RATE_REFRESH_MINUTES", "20"))
 
+# --- Alfabit: приём рублей по СБП и KYC (этап 5) ------------------------------
+# Без ключей оплата на сайте выключена: API отвечает 503, остальное работает.
+ALFABIT_API_KEY = os.environ.get("ALFABIT_API_KEY", "")
+ALFABIT_SECRET_KEY = os.environ.get("ALFABIT_SECRET_KEY", "")
+ALFABIT_BASE_URL = os.environ.get("ALFABIT_BASE_URL", "https://alfabit.org")
+ALFABIT_RATE_DIRECTION = os.environ.get("ALFABIT_RATE_DIRECTION", "buy")
+# Аварийный клапан: комиссия метода QR, заданная оператором вручную, на случай
+# когда список методов у alfabit пуст. По умолчанию выключен — зашитая комиссия
+# перестаёт ехать за кабинетом alfabit (CLAUDE.md, «Открытые вопросы»).
+_fee_fallback = os.environ.get("ALFABIT_FEE_PERCENT_FALLBACK", "").strip()
+ALFABIT_FEE_PERCENT_FALLBACK = Decimal(_fee_fallback) if _fee_fallback else None
+
 LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
@@ -258,11 +281,7 @@ LOGGING = {
     "root": {"handlers": ["console"], "level": "INFO"},
 }
 
-# В тестах каждый ожидаемый 401/403 пишет WARNING в django.request, и за этим
-# шумом не видно итога прогона.
+# В тестах ожидаемые отказы и сбои alfabit пишут в лог предупреждения со
+# стектрейсами, и за этим шумом не видно итога прогона.
 if "test" in sys.argv[1:2]:
-    LOGGING["loggers"] = {
-        "django.request": {"level": "ERROR"},
-        # Тест на запрос без CSRF-токена отказ ждёт — предупреждение лишнее.
-        "django.security.csrf": {"level": "ERROR"},
-    }
+    LOGGING["root"]["level"] = "CRITICAL"

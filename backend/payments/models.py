@@ -58,11 +58,29 @@ class Payer(models.Model):
     def is_approved(self) -> bool:
         return self.kyc_status == self.STATUS_APPROVED
 
+    @property
+    def is_final(self) -> bool:
+        return self.kyc_status in (self.STATUS_APPROVED, self.STATUS_REJECTED)
+
+    def name_visible_to(self, user) -> bool:
+        """ФИО по паспорту — только аккаунту, который сам загружал документы."""
+        return bool(user and user.is_authenticated) and self.documents.filter(
+            uploaded_by=user
+        ).exists()
+
 
 class Payment(models.Model):
+    # Наш статус — три состояния, которые важны человеку и менеджеру. Сырой
+    # статус alfabit лежит рядом в `provider_status`: у них вариантов больше, и
+    # написание плавает (paid / succeeded / completed …).
     STATUS_CREATED = "created"
     STATUS_PAID = "paid"
     STATUS_FAILED = "failed"
+    STATUS_CHOICES = [
+        (STATUS_CREATED, "Ждём оплату"),
+        (STATUS_PAID, "Оплачен"),
+        (STATUS_FAILED, "Не прошёл"),
+    ]
 
     # Наш идентификатор, уходит в alfabit как external_payment_id.
     external_payment_id = models.CharField("наш номер", max_length=64, unique=True)
@@ -86,7 +104,10 @@ class Payment(models.Model):
     rate_used = models.DecimalField("курс USDT/RUB", max_digits=18, decimal_places=6)
     price_per_cny = models.DecimalField("цена юаня, ₽", max_digits=12, decimal_places=2)
 
-    status = models.CharField("статус", max_length=32, default=STATUS_CREATED)
+    status = models.CharField(
+        "статус", max_length=32, choices=STATUS_CHOICES, default=STATUS_CREATED
+    )
+    provider_status = models.CharField("статус у alfabit", max_length=32, blank=True)
     qr_url = models.URLField("ссылка на оплату", max_length=1000, blank=True)
     qr_payload = models.TextField("payload QR", blank=True)
 
@@ -97,6 +118,17 @@ class Payment(models.Model):
     raw_response = models.JSONField("последний ответ alfabit", default=dict, blank=True)
     created_at = models.DateTimeField("создан", auto_now_add=True)
     paid_at = models.DateTimeField("оплачен", null=True, blank=True)
+    last_checked_at = models.DateTimeField("последний опрос", null=True, blank=True)
+
+    # Alfabit закрывает только приём рублей. Юань выдаёт менеджер руками, и
+    # отметка о выдаче — это и есть «уведомление менеджеру» на этапе 5: в
+    # админке оплаченные и не выданные платежи стоят отдельным списком.
+    # Telegram добавится позже (CLAUDE.md, «Открытые вопросы»).
+    issued_at = models.DateTimeField("юань выдан", null=True, blank=True)
+    issued_by = models.ForeignKey(
+        User, verbose_name="выдал", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="+",
+    )
 
     class Meta:
         verbose_name = "платёж"
@@ -106,6 +138,10 @@ class Payment(models.Model):
 
     def __str__(self) -> str:
         return f"{self.external_payment_id} — {self.amount_rub} ₽"
+
+    @property
+    def is_final(self) -> bool:
+        return self.status in (self.STATUS_PAID, self.STATUS_FAILED)
 
 
 class KycDocument(models.Model):
@@ -129,6 +165,15 @@ class KycDocument(models.Model):
         Payer, verbose_name="плательщик", on_delete=models.CASCADE, related_name="documents"
     )
     doc_type = models.CharField("тип документа", max_length=32, choices=TYPE_CHOICES)
+    # Кто загружал. От этого зависит, кому показывать ФИО по паспорту: только
+    # аккаунту, который сам отдавал документы, а не любому, кто привязал этот
+    # номер. Иначе привязка чужого номера — способ узнать чужое ФИО.
+    uploaded_by = models.ForeignKey(
+        User, verbose_name="загрузил", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="+",
+    )
+    # Явное согласие на обработку персданных — чекбокс перед загрузкой (152-ФЗ).
+    consent_at = models.DateTimeField("согласие на обработку ПД", null=True, blank=True)
     uploaded_at = models.DateTimeField("загружен", auto_now_add=True)
     low_confidence = models.BooleanField("распозналось плохо", null=True, blank=True)
     response = models.JSONField("ответ alfabit", default=dict, blank=True)

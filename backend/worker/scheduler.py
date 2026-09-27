@@ -1,7 +1,8 @@
 """Расписание фоновых задач.
 
-Сейчас здесь обновление котировок; опрос статусов платежей и досмотр заявок
-KYC приедут на этапе 4.
+Три вида задач: обновление котировок, досмотр неоплаченных платежей и досмотр
+заявок KYC. Состояние последних двух в БД, поэтому рестарт worker их не теряет
+(у бота оба реестра жили в памяти).
 
 APScheduler, а не Celery: задач три вида, все периодические, без цепочек и
 приоритетов. Redis ради этого не заводим (CLAUDE.md, «Порог пересмотра»).
@@ -38,6 +39,33 @@ def _refresh_quotes() -> None:
         logger.exception("Не удалось обновить котировки")
 
 
+# Платёж — чаще: человек ждёт подтверждения оплаты, и если он закрыл вкладку,
+# менеджер должен увидеть оплату в админке без задержки в минуты.
+PAYMENTS_EVERY_SECONDS = 30
+# Заявка KYC — реже: быстрый путь (распознавание за секунды) закрывает опрос с
+# экрана оплаты, сюда заявка попадает «надолго» — ручная сверка идёт часами.
+KYC_EVERY_SECONDS = 60
+
+
+def _alfabit_job(name: str):
+    """Обёртка: ошибка одного круга гасится в лог, расписание живёт дальше."""
+
+    def run() -> None:
+        from payments import services
+        from payments.alfabit import get_client
+
+        client = get_client()
+        if client is None:
+            return
+        try:
+            getattr(services, name)(client)
+        except Exception:
+            logger.exception("Задача %s упала", name)
+
+    run.__name__ = name
+    return run
+
+
 def build_scheduler() -> BlockingScheduler:
     scheduler = BlockingScheduler(timezone=settings.TIME_ZONE)
     scheduler.add_job(_heartbeat, trigger="interval", minutes=HEARTBEAT_MINUTES,
@@ -59,5 +87,18 @@ def build_scheduler() -> BlockingScheduler:
         logger.info("Обновление котировок: каждые %d мин", settings.RATE_REFRESH_MINUTES)
     else:
         logger.warning("RATE_SERVICE_URL не задан — котировки обновляться не будут")
+
+    if settings.ALFABIT_API_KEY and settings.ALFABIT_SECRET_KEY:
+        for name, seconds in (
+            ("watch_payments", PAYMENTS_EVERY_SECONDS),
+            ("watch_kyc", KYC_EVERY_SECONDS),
+        ):
+            scheduler.add_job(
+                _alfabit_job(name), trigger="interval", seconds=seconds, id=name,
+                replace_existing=True, max_instances=1, coalesce=True,
+            )
+        logger.info("Досмотр платежей и KYC включён")
+    else:
+        logger.warning("Ключи alfabit не заданы — платежи и KYC не досматриваются")
 
     return scheduler
