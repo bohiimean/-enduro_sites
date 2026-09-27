@@ -9,9 +9,15 @@ const password = ref('')
 const error = ref('')
 const busy = ref(false)
 
-onMounted(() => {
+const next = () => (typeof route.query.next === 'string' ? route.query.next : '/account')
+
+onMounted(async () => {
   // Спрашиваем сессию: заодно Django выставит csrftoken, без него вход получит 403.
-  if (!state.value.ready) void session()
+  if (!state.value.ready) await session()
+  // Уже вошли — форма входа не нужна. allauth повторный вход всё равно отбивает
+  // 409 без текста, и человек видел бы «проверьте почту и пароль» при верных
+  // данных. Сменить аккаунт — через «Выйти» в кабинете.
+  if (state.value.user) return navigateTo(next())
 })
 
 async function submit() {
@@ -22,9 +28,12 @@ async function submit() {
 
   busy.value = false
 
-  if (payload.status === 200) {
-    const next = typeof route.query.next === 'string' ? route.query.next : '/account'
-    return navigateTo(next)
+  if (payload.status === 200) return navigateTo(next())
+
+  // Вход в другой вкладке случился, пока эта была открыта.
+  if (payload.status === 409) {
+    await session()
+    if (state.value.user) return navigateTo(next())
   }
 
   // Адрес не подтверждён: allauth на этой же попытке отправил код заново,

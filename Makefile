@@ -47,4 +47,7 @@ psql:           ## Консоль PostgreSQL
 check:          ## Проверки Django
 	$(DC) exec backend python manage.py check
 
-.PHONY: help up rates quotes down logs ps migrate makemigrations superuser seed shell psql check
+test:           ## Тесты бэкенда (отдельная база test_enduro, рабочую не трогают)
+	$(DC) exec backend python manage.py test --noinput
+
+.PHONY: help up rates quotes down logs ps migrate makemigrations superuser seed shell psql check test

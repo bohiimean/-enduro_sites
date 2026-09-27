@@ -1,7 +1,13 @@
 <script setup lang="ts">
-const { signup, firstError } = useAuth()
+const { state, session, signup, firstError } = useAuth()
 
 useHead({ title: 'Регистрация' })
+
+// Вошедшему регистрация не нужна: allauth ответил бы 409 без текста.
+onMounted(async () => {
+  if (!state.value.ready) await session()
+  if (state.value.user) return navigateTo('/account')
+})
 
 const email = ref('')
 const password = ref('')
@@ -27,6 +33,11 @@ async function submit() {
   // аккаунт создан, но вход ещё закрыт до кода из письма. Это не ошибка.
   if (payload.status === 401 || payload.status === 200) {
     return navigateTo('/account/verify-email')
+  }
+
+  if (payload.status === 409) {
+    error.value = 'Вы уже вошли в аккаунт. Чтобы завести новый, сначала выйдите в кабинете.'
+    return
   }
 
   error.value = firstError(payload, 'Не удалось зарегистрироваться.')

@@ -1,6 +1,7 @@
 """Настройки Django. Всё окружение читается из переменных, значения по
 умолчанию рассчитаны на локальный docker-compose."""
 import os
+import sys
 from pathlib import Path
 
 import dj_database_url
@@ -256,3 +257,12 @@ LOGGING = {
     },
     "root": {"handlers": ["console"], "level": "INFO"},
 }
+
+# В тестах каждый ожидаемый 401/403 пишет WARNING в django.request, и за этим
+# шумом не видно итога прогона.
+if "test" in sys.argv[1:2]:
+    LOGGING["loggers"] = {
+        "django.request": {"level": "ERROR"},
+        # Тест на запрос без CSRF-токена отказ ждёт — предупреждение лишнее.
+        "django.security.csrf": {"level": "ERROR"},
+    }
