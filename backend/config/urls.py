@@ -7,7 +7,13 @@ from core.api import health
 
 urlpatterns = [
     path("admin/", admin.site.urls),
+    # Вход, регистрация, подтверждение почты и сброс пароля.
+    # Путь оставлен ровно таким, какой у allauth по умолчанию, и не переклеен
+    # под /api/v1/auth/ — чтобы примеры из документации совпадали один в один.
+    # В nginx для него есть отдельная location: иначе запрос уехал бы в Nuxt.
+    path("_allauth/", include("allauth.headless.urls")),
     path("api/v1/health/", health, name="health"),
+    path("api/v1/account/", include("accounts.urls")),
     path("api/v1/catalog/", include("catalog.urls")),
     path("api/v1/pricing/", include("pricing.urls")),
 ]

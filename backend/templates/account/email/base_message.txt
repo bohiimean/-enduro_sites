@@ -1,0 +1,11 @@
+{% comment %}
+Обёртка всех писем allauth. Переопределена ради русского текста и ради того,
+чтобы не зависеть от django.contrib.sites: у allauth в стандартной обёртке
+стоят current_site.name и current_site.domain, а приложение sites мы не
+ставим — оно нужно только соцвходу.
+{% endcomment %}{% autoescape off %}Здравствуйте!
+
+{% block content %}{% endblock content %}
+
+Это письмо отправлено автоматически, отвечать на него не нужно.
+Enduro{% endautoescape %}

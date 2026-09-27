@@ -1,67 +1,70 @@
-"""Пользователь и подтверждение номера.
+"""Пользователь и реестр номеров телефона.
 
-Логин — номер телефона (решено 22.09.2026). Причина не вкусовая: у alfabit
-ключ KYC — телефон, верификация проверяется один раз и переиспользуется. При
-входе по почте получились бы две независимые идентичности, которые пришлось бы
-сшивать руками.
+Логин — **почта + пароль** (решено 26.09.2026, отменяет решение от 22.09.2026 о
+телефоне как логине). Причина смены одна: опора аккаунта должна проверяться
+бесплатно. Телефон подтверждать нечем — SMS платные, MAX и Telegram не
+реализованы, — а при телефоне-логине непроверенный номер закрывал бы кабинет
+целиком. Почта проверяется письмом и заодно закрывает сброс пароля.
 
-Номер при регистрации **заявительный** — вписать можно что угодно. Поэтому
-подтверждение живёт отдельной сущностью (`PhoneNumber.verified_at`), а не
-флагом на пользователе, и всё, что выводится по телефону, обязано читать это
-поле. Каналов подтверждения (MAX / Telegram / SMS) пока нет — `verified_at`
-всегда NULL, и проверка просто ни у кого не проходит. Ворота стоят с первого
-дня специально: включение каналов на этапе 5 должно быть добавлением
-эндпоинта, а не переделкой контроля доступа.
+Номер при этом остаётся ключом KYC у alfabit: `Payer` уникален по телефону,
+аккаунт держит только ссылку на номер. Сшивать идентичности не требуется —
+связь аккаунт↔плательщик это FK, а не сопоставление по данным.
+
+Подтверждение адреса живёт в `EmailAddress.verified` (модель allauth), своего
+флага здесь нет и быть не должно — иначе два источника истины.
+
+Номер — заявительный: пользователь вписал что угодно, никто это не проверял.
+Поэтому подтверждение вынесено в `PhoneNumber.verified_at`, а не во флаг на
+пользователе, и всё, что выводится по телефону, обязано читать это поле.
+Каналов подтверждения (MAX / Telegram / SMS) пока нет — `verified_at` всегда
+NULL, и проверка просто ни у кого не проходит. Ворота стоят с первого дня
+специально: включение каналов на этапе 6 должно быть добавлением эндпоинта, а
+не переделкой контроля доступа.
 """
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from django.db import models
 from django.utils import timezone
 
-from core.phone import to_e164
-
 
 class UserManager(BaseUserManager):
     use_in_migrations = True
 
-    def _create(self, phone: str, password: str | None, **extra):
-        normalized = to_e164(phone)
-        if not normalized:
-            raise ValueError("Нужен российский номер в формате +7XXXXXXXXXX")
-        user = self.model(phone=normalized, **extra)
+    def _create(self, email: str, password: str | None, **extra):
+        if not email:
+            raise ValueError("Нужна почта — это логин")
+        user = self.model(email=self.normalize_email(email), **extra)
         user.set_password(password)
         user.save(using=self._db)
-        # Номер логина сразу заводится в реестре — неподтверждённым. Когда на
-        # этапе 5 появятся каналы, подтверждать будет что.
-        PhoneNumber.objects.get_or_create(user=user, phone=normalized)
         return user
 
-    def create_user(self, phone: str, password: str | None = None, **extra):
+    def create_user(self, email: str, password: str | None = None, **extra):
         extra.setdefault("is_staff", False)
         extra.setdefault("is_superuser", False)
-        return self._create(phone, password, **extra)
+        return self._create(email, password, **extra)
 
-    def create_superuser(self, phone: str, password: str | None = None, **extra):
+    def create_superuser(self, email: str, password: str | None = None, **extra):
         extra.setdefault("is_staff", True)
         extra.setdefault("is_superuser", True)
         if not extra["is_staff"] or not extra["is_superuser"]:
             raise ValueError("Суперпользователь должен быть is_staff и is_superuser")
-        return self._create(phone, password, **extra)
+        return self._create(email, password, **extra)
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    phone = models.CharField("телефон", max_length=16, unique=True)
+    # `null=True` — задел под будущую регистрацию только по номеру: у такого
+    # пользователя почты не будет, а менять уникальное поле на живых данных
+    # дороже, чем завести его правильным сразу.
+    # `blank=False` при этом обязателен: иначе форма сохранит пустую строку, и
+    # второй такой пользователь упрётся в уникальность по ''.
+    email = models.EmailField("почта (логин)", unique=True, null=True)
     full_name = models.CharField("ФИО", max_length=200, blank=True)
-    # Не логин. Назначение — возможное восстановление пароля, решение не
-    # принято (CLAUDE.md, «Открытые вопросы»). Поле заведено заранее, чтобы
-    # не делать миграцию ради одной колонки.
-    email = models.EmailField("почта (не логин)", blank=True)
     is_active = models.BooleanField("активен", default=True)
     is_staff = models.BooleanField("доступ в админку", default=False)
     created_at = models.DateTimeField("создан", auto_now_add=True)
 
     objects = UserManager()
 
-    USERNAME_FIELD = "phone"
+    USERNAME_FIELD = "email"
     REQUIRED_FIELDS: list[str] = []
 
     class Meta:
@@ -70,7 +73,7 @@ class User(AbstractBaseUser, PermissionsMixin):
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
-        return self.full_name or self.phone
+        return self.full_name or self.email or f"#{self.pk}"
 
     @property
     def has_verified_phone(self) -> bool:
@@ -80,8 +83,12 @@ class User(AbstractBaseUser, PermissionsMixin):
 class PhoneNumber(models.Model):
     """Номер, привязанный к аккаунту. Подтверждённый — ключ доступа к данным.
 
-    Номеров может быть несколько: платить человек вправе с другого номера, чем
-    тот, по которому зашёл, а KYC у alfabit привязан именно к номеру платежа.
+    Номеров у аккаунта может быть несколько: платить человек вправе с другого
+    номера, чем тот, который привязал первым, а KYC у alfabit висит именно на
+    номере платежа.
+
+    Номер запрашивается в сценарии оплаты (этап 5), а не при регистрации — там
+    же, где нужен, показываются и требования alfabit.
     """
 
     METHOD_MAX = "max"
@@ -98,7 +105,16 @@ class PhoneNumber(models.Model):
     user = models.ForeignKey(
         User, verbose_name="пользователь", on_delete=models.CASCADE, related_name="phones"
     )
-    phone = models.CharField("телефон", max_length=16)
+    # Уникален глобально: номер занимает первый, кто его привязал (решено
+    # 27.09.2026). Второму аккаунту — отказ «номер уже привязан к другому
+    # аккаунту». Забрать номер можно будет только подтверждением владения,
+    # когда на этапе 6 появятся каналы: подтверждённый владелец отвязывает
+    # номер у неподтверждённого аккаунта. Это эндпоинт, а не смена схемы.
+    #
+    # Принятый риск на сейчас: номер можно занять чужой. Атака бессмысленна —
+    # занявший не видит ни ФИО по паспорту (его отдаём только тому аккаунту,
+    # который сам загружал документы), ни заказов (они закрыты до verified_at).
+    phone = models.CharField("телефон", max_length=16, unique=True)
     verified_at = models.DateTimeField("подтверждён", null=True, blank=True)
     verification_method = models.CharField(
         "способ подтверждения", max_length=16, choices=METHOD_CHOICES, blank=True
@@ -108,18 +124,6 @@ class PhoneNumber(models.Model):
     class Meta:
         verbose_name = "номер телефона"
         verbose_name_plural = "номера телефонов"
-        constraints = [
-            models.UniqueConstraint(fields=["user", "phone"], name="uniq_user_phone"),
-            # Уникальность — только среди подтверждённых. Заявительный номер
-            # можно вписать кому угодно, и блокировать этим чужую регистрацию
-            # он не должен. Политика на момент включения каналов:
-            # подтверждённый владелец забирает номер.
-            models.UniqueConstraint(
-                fields=["phone"],
-                condition=models.Q(verified_at__isnull=False),
-                name="uniq_verified_phone",
-            ),
-        ]
         ordering = ["-created_at"]
 
     def __str__(self) -> str:
@@ -130,7 +134,7 @@ class PhoneNumber(models.Model):
         return self.verified_at is not None
 
     def mark_verified(self, method: str) -> None:
-        """Ставится каналом подтверждения. Этап 5 — сейчас никто не вызывает."""
+        """Ставится каналом подтверждения. Этап 6 — сейчас никто не вызывает."""
         self.verified_at = timezone.now()
         self.verification_method = method
         self.save(update_fields=["verified_at", "verification_method"])
