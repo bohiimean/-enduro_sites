@@ -98,3 +98,26 @@ button.link:hover { color: var(--accent); }
 
 .err { color: var(--err); margin: 0; }
 a { color: var(--accent); }
+
+/* Каталог: фильтры, карточки, две цены, характеристики. */
+.small { font-size: .85rem; }
+.filters { display: flex; flex-wrap: wrap; gap: .5rem 2rem; margin: 1rem 0 1.5rem; }
+.filters div { display: flex; flex-wrap: wrap; gap: .25rem 1rem; }
+.filters a { color: var(--muted); text-decoration: none; }
+.filters a:hover, .filters a.active { color: var(--accent); }
+.filters a.active { font-weight: 600; }
+.grid .card p { margin: 0; }
+.cover {
+  display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: contain;
+  background: var(--bg); border-radius: .4rem; margin-bottom: .5rem;
+}
+.gallery { display: grid; gap: .5rem; grid-template-columns: repeat(auto-fill, minmax(12rem, 1fr)); margin: 1rem 0; }
+.gallery img { width: 100%; border-radius: .4rem; }
+.offers { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr)); margin: 1.5rem 0; }
+.offers .card { margin: 0; align-content: start; }
+.offers .price { font-size: 1.5rem; }
+.specs { display: grid; grid-template-columns: minmax(7rem, 13rem) 1fr; gap: .35rem 1rem; margin: 0; }
+.specs dt { color: var(--muted); }
+.specs dd { margin: 0; }
+.facts { margin-bottom: 1rem; }
+.description { white-space: pre-line; }

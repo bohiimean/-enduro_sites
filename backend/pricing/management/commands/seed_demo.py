@@ -13,7 +13,7 @@ from decimal import Decimal
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from catalog.models import Brand, Product
+from catalog.models import Brand, CatalogSettings, Product
 from orders.models import SupplyStatus
 from pricing.models import MarkupRule, PaymentMethod, PricingSettings, RateSource
 
@@ -45,6 +45,26 @@ MARKUPS = [
     (PaymentMethod.CODE_CASH_MOSCOW, "Стандарт", MarkupRule.KIND_RUB_ADD, "2.7", None, "67", 50),
     (PaymentMethod.CODE_CASH_MOSCOW, "от 300 000 ₽", MarkupRule.KIND_RUB_ADD, "2.5", "300000", "67", 60),
     (PaymentMethod.CODE_CASH_MOSCOW, "от 500 000 ₽", MarkupRule.KIND_RUB_ADD, "2.1", "500000", "67", 70),
+]
+
+# По карточке на ДВС и электро, чтобы были видны оба набора характеристик.
+# Характеристики — из открытых спецификаций, цена завода условная.
+DEMO_NOTE = ("Демо-позиция, заведена командой seed_demo: цена условная. "
+             "Удалите, когда появится настоящий каталог.")
+DEMO_BIKES = [
+    ("STN", {
+        "model": "G9 Pro", "model_year": 2026, "powertrain": Product.ICE_4T,
+        "tagline": "Эндуро 300 см³ на каждый день", "description": DEMO_NOTE,
+        "price_cny": Decimal("15000"), "stock_qty": 2,
+        "displacement_cc": 300, "power_hp": Decimal("30"), "transmission": "6-ступенчатая",
+    }),
+    ("Surron", {
+        "model": "Ultra Bee HP", "model_year": 2026, "powertrain": Product.ELECTRIC,
+        "tagline": "Электро-эндуро, 24,5 кВт в режиме Turbo", "description": DEMO_NOTE,
+        "price_cny": Decimal("35000"),
+        "power_kw": Decimal("24.5"), "battery_voltage_v": 74,
+        "battery_capacity_ah": Decimal("60"), "range_km": 115, "max_speed_kmh": 95,
+    }),
 ]
 
 SUPPLY_STATUSES = [
@@ -93,19 +113,22 @@ class Command(BaseCommand):
 
         PricingSettings.load()
 
+        # Каталог считает цены по курсу QR-оплаты — той же цифре, что в шапке
+        # страницы курса. Выбор, сделанный в админке, не перетираем.
+        catalog = CatalogSettings.load()
+        if catalog.rate_method_id is None:
+            catalog.rate_method = PaymentMethod.objects.get(code=PaymentMethod.CODE_QR)
+            catalog.save()
+
         for name, sort, is_final in SUPPLY_STATUSES:
             SupplyStatus.objects.update_or_create(
                 name=name, defaults={"sort": sort, "is_final": is_final}
             )
 
         if not Product.objects.exists():
-            brand, _ = Brand.objects.get_or_create(name="Kayo", defaults={"sort": 10})
-            Product.objects.create(
-                brand=brand, model="K6-R 250", color="синий",
-                price=Decimal("389000"), in_stock=True,
-                description="Демо-позиция, заведена командой seed_demo. Удалите, "
-                            "когда появится настоящий каталог.",
-            )
+            for brand_name, fields in DEMO_BIKES:
+                brand, _ = Brand.objects.get_or_create(name=brand_name)
+                Product.objects.create(brand=brand, **fields)
 
         self.stdout.write(self.style.SUCCESS(
             f"Готово: источников {RateSource.objects.count()}, "

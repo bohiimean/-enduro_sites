@@ -22,16 +22,31 @@ export interface Paginated<T> {
   results: T[]
 }
 
+export interface SpecGroup {
+  title: string
+  items: { label: string; value: string }[]
+}
+
+/** Цены считает бэкенд по курсу; `price_rub: null` — «цена по запросу». */
 export interface Product {
   id: number
   slug: string
   title: string
   brand: { id: number; name: string; slug: string }
   model: string
-  color: string
-  price: string | null
+  model_year: number | null
+  powertrain: 'ice_4t' | 'ice_2t' | 'electric'
+  powertrain_label: string
+  tagline: string
   description: string
-  in_stock: boolean
+  colors: string
+  documents: '' | 'epts' | 'none'
+  documents_label: string
+  highlights: string[]
+  specs: SpecGroup[]
+  stock: { qty: number; price_rub: string | null } | null
+  order: { price_rub: string | null; lead_time: string } | null
+  rate: { price_per_cny: string; fetched_at: string } | null
   photos: { id: number; url: string; sort: number }[]
 }
 
