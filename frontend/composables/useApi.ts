@@ -12,7 +12,11 @@ export function useApiBase(): string {
 }
 
 export function useApiFetch<T>(path: string, options: Record<string, unknown> = {}) {
-  return useFetch<T>(path, { baseURL: useApiBase(), ...options })
+  // Адрес задаётся своим $fetch, а не опцией baseURL: baseURL входит в ключ
+  // кеша useFetch, а он у сервера и браузера разный. С опцией браузер не
+  // находил данные, отрисованные сервером, запрашивал их заново, и Vue
+  // ругался на расхождение HTML при гидрации.
+  return useFetch<T>(path, { $fetch: $fetch.create({ baseURL: useApiBase() }), ...options })
 }
 
 export interface Paginated<T> {
@@ -46,8 +50,30 @@ export interface Product {
   specs: SpecGroup[]
   stock: { qty: number; price_rub: string | null } | null
   order: { price_rub: string | null; lead_time: string } | null
-  rate: { price_per_cny: string; fetched_at: string } | null
+  rate: CatalogRate | null
   photos: { id: number; url: string; sort: number }[]
+}
+
+export interface CatalogRate {
+  price_per_cny: string
+  fetched_at: string
+}
+
+/** Курс юаня каталога и наценка под заказ, которую обещает главная. */
+export interface CatalogTerms {
+  order_markup_percent: string
+  rate: CatalogRate | null
+}
+
+/** Верхняя строка сайта и главная берут один ответ: кто спросил вторым,
+ * получает готовый из payload. Без этого запросов было бы два — на сервере
+ * шапка и страница рендерятся по очереди, и ждать к приходу второго нечего. */
+export function useCatalogTerms() {
+  return useApiFetch<CatalogTerms>('/catalog/terms/', { key: 'catalog-terms', getCachedData: fromPayload })
+}
+
+function fromPayload(key: string, nuxtApp: ReturnType<typeof useNuxtApp>) {
+  return nuxtApp.payload.data[key]
 }
 
 export interface Tier {

@@ -1,10 +1,12 @@
 from django.db.models import Q
 from rest_framework import generics
 from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from .models import CatalogSettings, Product
 from .pricing import current_rate
-from .serializers import ProductSerializer
+from .serializers import CatalogTermsSerializer, ProductSerializer
 
 # Незнакомое значение фильтра не ошибка, а просто весь каталог: адрес
 # могли набрать руками или сохранить в закладках со старым параметром.
@@ -51,3 +53,19 @@ class ProductListView(CatalogViewMixin, generics.ListAPIView):
 
 class ProductDetailView(CatalogViewMixin, generics.RetrieveAPIView):
     lookup_field = "slug"
+
+
+class CatalogTermsView(APIView):
+    """Курс юаня каталога и наценка под заказ — для шапки сайта.
+
+    Главная обещает «предзаказ с фиксированной наценкой 5%». Цифра берётся
+    отсюда, а не пишется во фронтенде: иначе правка наценки в админке оставила
+    бы на сайте старое обещание.
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        config = CatalogSettings.load()
+        terms = {"order_markup_percent": config.order_markup_percent, "rate": current_rate(config)}
+        return Response(CatalogTermsSerializer(terms).data)

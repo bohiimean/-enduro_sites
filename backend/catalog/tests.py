@@ -34,6 +34,7 @@ from .specs import fmt_number, highlights, spec_groups
 D = Decimal
 MSK = ZoneInfo("Europe/Moscow")
 LIST_URL = "/api/v1/catalog/products/"
+TERMS_URL = "/api/v1/catalog/terms/"
 
 
 def make_rate(value="87.6", fetched_at=None):
@@ -459,6 +460,26 @@ class CatalogApiTests(TestCase):
         data = self.detail(bike()).json()
         self.assertIsNone(data["rate"])
         self.assertIsNone(data["order"]["price_rub"])
+
+    def test_terms(self):
+        # Наценку под заказ обещает главная: цифра — из настроек, курс — тот
+        # же, что в карточках. Наценка «в наличии» наружу не уходит.
+        config = CatalogSettings.load()
+        config.order_markup_percent = D("7")
+        config.save()
+        data = self.client.get(TERMS_URL).json()
+        self.assertEqual(set(data), {"order_markup_percent", "rate"})
+        self.assertEqual(data["order_markup_percent"], "7.00")
+        self.assertEqual(data["rate"]["price_per_cny"], "13.81")
+        self.assertIn("fetched_at", data["rate"])
+
+    def test_terms_without_rate(self):
+        config = CatalogSettings.load()
+        config.rate_method = None
+        config.save()
+        data = self.client.get(TERMS_URL).json()
+        self.assertIsNone(data["rate"])
+        self.assertEqual(data["order_markup_percent"], "5.00")
 
     def test_unpublished_is_hidden(self):
         shown, hidden = bike(), bike(is_published=False)

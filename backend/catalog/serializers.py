@@ -51,6 +51,14 @@ class RateSerializer(serializers.Serializer):
     fetched_at = serializers.DateTimeField()
 
 
+class CatalogTermsSerializer(serializers.Serializer):
+    """Публичная часть настроек каталога. Наценка «в наличии» сюда не входит:
+    сайт её не обещает."""
+
+    order_markup_percent = serializers.DecimalField(max_digits=5, decimal_places=2)
+    rate = RateSerializer(allow_null=True)
+
+
 class ProductSerializer(serializers.ModelSerializer):
     """Карточка байка. Цены считаются по курсу, который view берёт один раз
     на запрос и кладёт в контекст: `catalog_config` и `catalog_rate`."""

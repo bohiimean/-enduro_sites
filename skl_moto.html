@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SKL MOTO | Официальный дилер</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&family=Manrope:wght@400;600;800&display=swap" rel="stylesheet">
+  
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              orange: '#FF6600',
+              black: '#111827', // Slate 900
+              gray: '#4B5563',  // Gray 600
+              light: '#F3F4F6', // Gray 100
+              border: '#E5E7EB' // Gray 200
+            }
+          },
+          fontFamily: {
+            oswald: ['"Oswald"', 'sans-serif'],
+            sans: ['"Manrope"', 'sans-serif']
+          }
+        }
+      }
+    }
+  </script>
+  
+  <style>
+    body { background-color: #FFFFFF; color: #111827; }
+    .clip-angle { clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px); }
+    .clip-button { clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); transition: all 0.2s ease; }
+    .clip-button:hover { transform: translateY(-2px); box-shadow: 0 10px 15px -3px rgba(255, 102, 0, 0.3); }
+    .clip-tab { clip-path: polygon(10px 0, 100% 0, 100% 100%, 0 100%, 0 10px); }
+    /* Кастомный скроллбар */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-track { background: #F3F4F6; }
+    ::-webkit-scrollbar-thumb { background: #FF6600; }
+  </style>
+</head>
+<body class="font-sans antialiased flex flex-col min-h-screen">
+
+  <div class="bg-brand-light border-b border-brand-border text-[11px] font-oswald uppercase tracking-widest text-brand-gray py-2 px-6 flex justify-between items-center">
+    <div class="flex items-center gap-4">
+      <span class="flex items-center gap-2"><div class="w-2 h-2 bg-emerald-500 animate-pulse"></div> МОСКВА: ВЫДАЧА СЕГОДНЯ</span>
+      <span class="text-brand-border">|</span>
+      <span>КУРС: <span id="ui-rate" class="text-brand-orange font-bold text-sm">13.80 ₽</span></span>
+    </div>
+    <div class="flex items-center gap-4">
+      <span>Telegram: @sklmoto</span>
+      <span class="text-brand-border">|</span>
+      <button onclick="toggleModal('sheet-modal')" class="hover:text-brand-orange transition-colors font-bold text-brand-black">LIVE DB SYNC</button>
+    </div>
+  </div>
+
+  <header class="bg-white sticky top-0 z-40 border-b border-brand-border shadow-sm">
+    <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+      <!-- Логотип -->
+      <div class="flex items-center gap-3 cursor-pointer">
+        <div class="bg-brand-orange text-white font-oswald text-3xl font-bold px-3 py-1 italic transform -skew-x-12">SKL</div>
+        <div class="font-oswald text-3xl font-bold tracking-wider text-brand-black">MOTO</div>
+      </div>
+      
+      <!-- Кнопка кабинета -->
+      <button onclick="toggleModal('cabinet-modal')" class="clip-button bg-white border-2 border-brand-border hover:border-brand-orange px-6 py-2.5 font-oswald uppercase tracking-widest text-sm flex items-center gap-2 text-brand-black transition-colors">
+        <span id="header-user">ЛИЧНЫЙ КАБИНЕТ</span>
+        <svg class="w-4 h-4 text-brand-orange" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+      </button>
+    </div>
+  </header>
+
+  <section class="bg-brand-light border-b border-brand-border overflow-hidden">
+    <div class="max-w-7xl mx-auto px-6 py-16 lg:py-24 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+      <div class="space-y-6">
+        <div class="inline-block bg-brand-orange text-white font-oswald px-3 py-1 uppercase tracking-widest text-xs font-bold clip-tab shadow-sm">
+          ИМПОРТ БЕЗ ПОСРЕДНИКОВ
+        </div>
+        <h1 class="text-5xl lg:text-7xl font-oswald font-bold uppercase leading-none tracking-tight text-brand-black">
+          ЭНДУРО И ЭЛЕКТРО.<br>
+          <span class="text-brand-orange">ПРЯМО С ЗАВОДА.</span>
+        </h1>
+        <p class="text-brand-gray max-w-md font-sans text-sm">
+          Забирай технику из наличия в Москве или оформляй прямой предзаказ из Китая с фиксированной наценкой 5%. Прозрачный договор и оплата в рублях.
+        </p>
+      </div>
+      <div class="relative flex justify-center items-center h-64 lg:h-96">
+        <img src="https://liberta.co.jp/ktm/images/machine/new/2022-300EXC-TPI-ER_X.png" alt="Moto" class="absolute w-full h-full object-contain drop-shadow-2xl hover:scale-105 transition-transform duration-500">
+      </div>
+    </div>
+  </section>
+
+  <div class="bg-white sticky top-20 z-30 border-b border-brand-border shadow-sm">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex flex-wrap gap-3">
+      <button onclick="setFilter('all')" id="filter-all" class="filter-btn active clip-tab px-6 py-2 bg-brand-orange text-white font-oswald uppercase tracking-widest font-bold shadow-md">Все модели</button>
+      <button onclick="setFilter('stock')" id="filter-stock" class="filter-btn clip-tab px-6 py-2 bg-white text-brand-black border-2 border-brand-border hover:border-brand-orange font-oswald uppercase tracking-widest transition-colors"><span class="text-emerald-500 mr-2">●</span>В наличии (МСК)</button>
+      <button onclick="setFilter('order')" id="filter-order" class="filter-btn clip-tab px-6 py-2 bg-white text-brand-black border-2 border-brand-border hover:border-brand-orange font-oswald uppercase tracking-widest transition-colors"><span class="text-brand-orange mr-2">●</span>Предзаказ (КНР)</button>
+    </div>
+  </div>
+
+  <main class="bg-white max-w-7xl mx-auto px-6 py-12 flex-1 w-full">
+    <div id="catalog" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <!-- Генерируется JS -->
+    </div>
+  </main>
+
+  <div id="product-modal" class="fixed inset-0 bg-brand-black/40 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white border border-brand-border shadow-2xl w-full max-w-3xl clip-angle relative max-h-[90vh] overflow-y-auto">
+      <button onclick="toggleModal('product-modal')" class="absolute top-4 right-4 text-brand-gray hover:text-brand-orange p-2 z-10 text-xl font-bold">✕</button>
+      
+      <div id="product-modal-content" class="p-8 space-y-6">
+        <!-- Динамическое наполнение JS -->
+      </div>
+    </div>
+  </div>
+
+  <div id="cabinet-modal" class="fixed inset-0 bg-brand-black/40 z-50 hidden flex items-center justify-center p-4 backdrop-blur-sm">
+    <div class="bg-white border border-brand-border shadow-2xl w-full max-w-lg clip-angle relative">
+      <button onclick="toggleModal('cabinet-modal')" class="absolute top-4 right-4 text-brand-gray hover:text-brand-orange p-2">✕</button>
+      
+      <div class="p-8 border-b border-brand-border bg-brand-light">
+        <h2 class="font-oswald text-3xl uppercase text-brand-black">Личный кабинет</h2>
+        <p class="text-xs font-sans text-brand-gray mt-1">Оформление заказа и генерация QR СБП</p>
+      </div>
+
+      <div class="p-8">
+        <!-- Блок Входа -->
+        <div id="auth-box" class="space-y-4">
+          <label class="font-oswald uppercase tracking-widest text-sm text-brand-gray">Ваш Email:</label>
+          <input type="email" id="email-input" value="rider@sklmoto.ru" class="w-full bg-white border-2 border-brand-border px-4 py-3 text-brand-black font-sans focus:outline-none focus:border-brand-orange transition-colors">
+          <button onclick="login()" class="clip-button w-full bg-brand-orange text-white font-oswald font-bold uppercase tracking-widest py-4 text-lg">Войти</button>
+        </div>
+
+        <!-- Блок Оплаты и Корзины -->
+        <div id="pay-box" class="space-y-6 hidden">
+          <div class="bg-brand-light p-4 border-l-4 border-brand-orange font-sans text-sm flex justify-between items-center">
+            <div>
+              <span class="text-brand-gray">Профиль:</span> <strong id="logged-email" class="text-brand-black"></strong>
+            </div>
+            <button onclick="clearCart()" class="text-xs text-red-500 hover:underline uppercase font-oswald">Очистить корзину</button>
+          </div>
+
+          <!-- Список товаров в корзине -->
+          <div class="space-y-3">
+            <h3 class="font-oswald text-lg uppercase font-bold text-brand-black border-b border-brand-border pb-1">Состав заказа</h3>
+            <div id="cart-items" class="space-y-2 max-h-48 overflow-y-auto pr-1">
+              <!-- Динамический список из JS -->
+            </div>
+          </div>
+
+          <div class="flex justify-between items-end border-t border-b border-brand-border py-4 my-4">
+            <div class="font-oswald uppercase tracking-widest text-brand-gray">Итого к оплате:</div>
+            <div id="rub-output" class="font-oswald text-4xl font-bold text-brand-black">0 ₽</div>
+          </div>
+
+          <button onclick="showQR()" class="clip-button w-full bg-brand-orange text-white font-oswald font-bold uppercase tracking-widest py-4 text-lg shadow-lg">Создать QR-код оплаты</button>
+
+          <!-- QR Код -->
+          <div id="qr-box" class="hidden text-center bg-white border-2 border-brand-border p-4 clip-angle">
+            <img id="qr-img" src="" alt="QR" class="mx-auto w-48 h-48">
+            <p class="text-brand-black font-sans text-xs mt-3 font-bold uppercase">Оплата через СБП любого банка</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let cnyRate = 13.80;
+    let cart = [];
+    let selectedPurchaseType = {}; // Вариант покупки для каждого товара: 'stock' или 'order'
+
+    let products = [
+      { 
+        id: 'surron', 
+        title: 'SURRON ULTRA BEE', 
+        stock: 2, 
+        priceStockRub: 520000, 
+        priceOrderRub: 490000, 
+        desc: 'Флагман электро-эндуро. Алюминиевая рама, 12.5 кВт.', 
+        img: 'https://liberta.co.jp/ktm/images/machine/new/2022-300EXC-TPI-ER_X.png',
+        specs: {
+          motor: 'Бесщеточный PMSM, 12.5 кВт',
+          battery: '74V 55Ah (Lithium-ion)',
+          weight: '85 кг',
+          range: 'До 140 км на одном заряде',
+          brakes: 'Гидравлические дисковые (4-поршневые)'
+        },
+        details: 'Ультрасовременный электромотоцикл с продвинутой системой трек-контроля (SRTC), регулируемой подвеской с ходом 240 мм и мгновенным крутящим моментом.'
+      },
+      { 
+        id: 'hengjian', 
+        title: 'HENGJIAN Z300 2T', 
+        stock: 0, 
+        priceStockRub: 380000, 
+        priceOrderRub: 345000, 
+        desc: 'Только под заказ. Копия австрийской рамы. Мотор Loncin 2T 40 л.с.', 
+        img: 'https://liberta.co.jp/ktm/images/machine/new/2022-300EXC-TPI-ER_X.png',
+        specs: {
+          motor: 'Loncin 2-тактный, 300 куб.см',
+          power: '40 л.с.',
+          carburetor: 'Keihin PWK 38',
+          transmission: '6-ступенчатая МКПП',
+          frame: 'Хромомолибденовая стальная пространственная рама'
+        },
+        details: 'Топовый китайский хард-эндуро мотоцикл с мотором водяного охлаждения. Полный аналог именитых европейских брендов по доступной цене.'
+      },
+      { 
+        id: 'stn', 
+        title: 'STN G9 PRO 2026', 
+        stock: 3, 
+        priceStockRub: 310000, 
+        priceOrderRub: 285000, 
+        desc: 'Надежный 300cc 4T эндуро. Подвеска FASTACE.', 
+        img: 'https://liberta.co.jp/ktm/images/machine/new/2022-300EXC-TPI-ER_X.png',
+        specs: {
+          motor: 'Zongshen 300cc 4-тактный',
+          cooling: 'Водяное радиаторное',
+          suspension: 'FASTACE с регулировкой отбоя и сжатия',
+          wheels: '21/18 алюминиевые обода усиленные'
+        },
+        details: 'Прекрасный выбор для любителей внедорожных покатушек. Выносливый четырехтактный двигатель, мощная светодиодная фара и прочная защита картера в базе.'
+      }
+    ];
+
+    let activeFilter = 'all';
+
+    function renderCatalog() {
+      const cat = document.getElementById('catalog');
+      cat.innerHTML = '';
+      
+      products.forEach(p => {
+        if (activeFilter === 'stock' && p.stock === 0) return;
+        if (activeFilter === 'order' && p.stock > 0) return;
+
+        const hasStock = p.stock > 0;
+        const mainPrice = hasStock ? p.priceStockRub : p.priceOrderRub;
+
+        if (!selectedPurchaseType[p.id]) {
+          selectedPurchaseType[p.id] = hasStock ? 'stock' : 'order';
+        }
+
+        const card = document.createElement('div');
+        card.className = "bg-white border-2 border-brand-border hover:border-brand-orange hover:shadow-xl transition-all duration-300 clip-angle flex flex-col justify-between group cursor-pointer";
+        
+        card.onclick = (e) => {
+          if(!e.target.closest('button')) {
+            openProductModal(p.id);
+          }
+        };
+
+        card.innerHTML = `
+          <div>
+            <div class="px-5 py-3 border-b border-brand-border flex justify-between font-oswald uppercase text-xs tracking-widest font-bold bg-brand-light">
+              ${hasStock 
+                ? `<span class="text-emerald-600">● В НАЛИЧИИ: ${p.stock} шт</span>` 
+                : `<span class="text-brand-orange">● ПРЕДЗАКАЗ КНР</span>`}
+              <span class="text-brand-gray group-hover:text-brand-orange transition-colors">ПОДРОБНЕЕ ↗</span>
+            </div>
+            
+            <div class="p-6">
+              <div class="h-40 flex justify-center mb-4">
+                <img src="${p.img}" class="h-full object-contain group-hover:scale-105 transition-transform">
+              </div>
+              <h3 class="font-oswald text-2xl uppercase font-bold text-brand-black leading-tight mb-2">${p.title}</h3>
+              <p class="font-sans text-xs text-brand-gray mb-6 h-8">${p.desc}</p>
+              
+              <div class="border-t border-brand-border pt-4 mt-auto">
+                <div class="flex justify-between items-end mb-4">
+                  <div>
+                    <div class="text-[10px] font-oswald uppercase text-brand-gray">${hasStock ? 'В наличии МСК' : 'Предзаказ КНР'}</div>
+                    <div class="font-oswald text-2xl font-bold text-brand-black">${mainPrice.toLocaleString()} ₽</div>
+                  </div>
+                </div>
+
+                <button onclick="openProductModal('${p.id}')" class="clip-button w-full bg-brand-orange text-white py-2.5 font-oswald text-sm uppercase tracking-widest font-bold shadow-md">
+                  Подробнее
+                </button>
+              </div>
+            </div>
+          </div>
+        `;
+        cat.appendChild(card);
+      });
+    }
+
+    function openProductModal(id) {
+      const p = products.find(item => item.id === id);
+      if(!p) return;
+
+      const modalContent = document.getElementById('product-modal-content');
+      
+      let specsHtml = '';
+      for (const [key, val] of Object.entries(p.specs)) {
+        specsHtml += `<div class="flex justify-between border-b border-brand-border py-2 text-xs font-sans"><span class="text-brand-gray uppercase">${key}</span><span class="font-bold text-brand-black">${val}</span></div>`;
+      }
+
+      const currentOption = selectedPurchaseType[p.id] || (p.stock > 0 ? 'stock' : 'order');
+
+      modalContent.innerHTML = `
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+          <div class="bg-brand-light p-6 flex justify-center clip-angle">
+            <img src="${p.img}" class="h-56 object-contain">
+          </div>
+          <div class="space-y-4">
+            <div class="inline-block bg-brand-orange text-white font-oswald px-3 py-0.5 text-xs uppercase font-bold tracking-widest">
+              ${p.stock > 0 ? 'В наличии в Москве' : 'Под заказ из Китая'}
+            </div>
+            <h2 class="font-oswald text-4xl uppercase font-bold text-brand-black">${p.title}</h2>
+            <p class="font-sans text-xs text-brand-gray leading-relaxed">${p.details}</p>
+            
+            <div class="space-y-2 pt-2">
+              <label class="flex items-center justify-between p-3 border-2 ${currentOption === 'stock' ? 'border-emerald-500 bg-emerald-50' : 'border-brand-border'} ${p.stock === 0 ? 'opacity-40' : 'cursor-pointer'}">
+                <div class="flex items-center gap-2">
+                  <input type="radio" name="modal-option-${p.id}" value="stock" ${currentOption === 'stock' ? 'checked' : ''} ${p.stock === 0 ? 'disabled' : ''} onchange="selectedPurchaseType['${p.id}']='stock'; openProductModal('${p.id}');">
+                  <span class="font-oswald text-xs uppercase font-bold">В наличие Мск</span>
+                </div>
+                <span class="font-oswald font-bold text-brand-black">${p.stock > 0 ? p.priceStockRub.toLocaleString() + ' ₽' : 'Нет в наличии'}</span>
+              </label>
+
+              <label class="flex items-center justify-between p-3 border-2 ${currentOption === 'order' ? 'border-brand-orange bg-orange-50' : 'border-brand-border'} cursor-pointer">
+                <div class="flex items-center gap-2">
+                  <input type="radio" name="modal-option-${p.id}" value="order" ${currentOption === 'order' ? 'checked' : ''} onchange="selectedPurchaseType['${p.id}']='order'; openProductModal('${p.id}');">
+                  <span class="font-oswald text-xs uppercase font-bold text-brand-orange">Предзаказ КНР</span>
+                </div>
+                <span class="font-oswald font-bold text-brand-black">${p.priceOrderRub.toLocaleString()} ₽</span>
+              </label>
+            </div>
+
+            <button onclick="addToCart('${p.id}', selectedPurchaseType['${p.id}']); toggleModal('product-modal');" class="clip-button w-full bg-brand-orange text-white font-oswald font-bold uppercase tracking-widest py-3 text-base shadow-lg">
+              Добавить в корзину
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-brand-border">
+          <h3 class="font-oswald text-xl uppercase font-bold text-brand-black mb-4">Технические характеристики</h3>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-1">
+            ${specsHtml}
+          </div>
+        </div>
+      `;
+
+      if(document.getElementById('product-modal').classList.contains('hidden')) {
+        toggleModal('product-modal');
+      }
+    }
+
+    function addToCart(id, option) {
+      const p = products.find(item => item.id === id);
+      if(!p) return;
+
+      const isStock = option === 'stock';
+      const priceRub = isStock ? p.priceStockRub : p.priceOrderRub;
+
+      cart.push({
+        ...p,
+        purchaseType: isStock ? 'В наличие Мск' : 'Предзаказ КНР',
+        finalPriceRub: priceRub
+      });
+      
+      updateCartUI();
+      toggleModal('cabinet-modal');
+    }
+
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      updateCartUI();
+    }
+
+    function clearCart() {
+      cart = [];
+      updateCartUI();
+    }
+
+    function updateCartUI() {
+      const userHeader = document.getElementById('header-user');
+      userHeader.innerText = cart.length > 0 ? `КОРЗИНА (${cart.length})` : 'ЛИЧНЫЙ КАБИНЕТ';
+
+      const cartItems = document.getElementById('cart-items');
+      cartItems.innerHTML = '';
+
+      if (cart.length === 0) {
+        cartItems.innerHTML = '<div class="text-brand-gray text-xs font-sans italic py-4 text-center">Ваша корзина пуста</div>';
+      } else {
+        cart.forEach((item, index) => {
+          const div = document.createElement('div');
+          div.className = "flex justify-between items-center bg-brand-light p-3 border border-brand-border text-xs font-sans";
+          div.innerHTML = `
+            <div>
+              <div class="font-bold text-brand-black font-oswald text-sm">${item.title}</div>
+              <div class="text-[10px] text-brand-gray uppercase">${item.purchaseType}</div>
+            </div>
+            <div class="flex items-center gap-3">
+              <span class="font-oswald font-bold text-brand-black text-sm">${item.finalPriceRub.toLocaleString()} ₽</span>
+              <button onclick="removeFromCart(${index})" class="text-red-500 font-bold hover:text-red-700">✕</button>
+            </div>
+          `;
+          cartItems.appendChild(div);
+        });
+      }
+
+      calcRub();
+    }
+
+    function setFilter(filter) {
+      activeFilter = filter;
+      document.querySelectorAll('.filter-btn').forEach(b => {
+        b.className = "filter-btn clip-tab px-6 py-2 bg-white text-brand-black border-2 border-brand-border hover:border-brand-orange font-oswald uppercase tracking-widest transition-colors";
+      });
+      const activeBtn = document.getElementById(`filter-${filter}`);
+      activeBtn.className = "filter-btn active clip-tab px-6 py-2 bg-brand-orange text-white font-oswald uppercase tracking-widest font-bold shadow-md";
+      renderCatalog();
+    }
+
+    function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); }
+
+    function login() {
+      const emailInput = document.getElementById('email-input');
+      const email = emailInput.value.trim();
+      
+      if(!email || !email.includes('@')) {
+        emailInput.classList.remove('border-brand-border');
+        emailInput.classList.add('border-red-500');
+        
+        if (!document.getElementById('email-error')) {
+            const errorMsg = document.createElement('p');
+            errorMsg.id = 'email-error';
+            errorMsg.className = 'text-red-500 text-xs font-sans mt-1';
+            errorMsg.innerText = 'Пожалуйста, введите корректный email.';
+            emailInput.parentNode.insertBefore(errorMsg, emailInput.nextSibling);
+        }
+        return;
+      }
+
+      emailInput.classList.add('border-brand-border');
+      emailInput.classList.remove('border-red-500');
+      const errorElem = document.getElementById('email-error');
+      if(errorElem) errorElem.remove();
+
+      document.getElementById('logged-email').innerText = email;
+      document.getElementById('auth-box').classList.add('hidden');
+      document.getElementById('pay-box').classList.remove('hidden');
+      updateCartUI();
+    }
+
+    function calcRub() {
+      const totalRub = cart.reduce((sum, item) => sum + item.finalPriceRub, 0);
+      document.getElementById('rub-output').innerText = `${totalRub.toLocaleString()} ₽`;
+    }
+
+    function showQR() {
+      const totalRub = cart.reduce((sum, item) => sum + item.finalPriceRub, 0);
+      if(totalRub === 0) {
+        alert("Корзина пуста. Добавьте товары перед оплатой.");
+        return;
+      }
+      document.getElementById('qr-img').src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=SKLMOTO_PAY_${totalRub}_RUB`;
+      document.getElementById('qr-box').classList.remove('hidden');
+    }
+
+    renderCatalog();
+  </script>
+</body>
+</html>
