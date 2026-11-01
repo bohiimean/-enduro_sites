@@ -1,6 +1,6 @@
 <script setup lang="ts">
 // Фото байка или заглушка, пока менеджер его не загрузил.
-defineProps<{ src?: string; alt: string; eager?: boolean }>()
+defineProps<{ src?: string; alt: string; eager?: boolean; generic?: boolean }>()
 </script>
 
 <template>
@@ -13,7 +13,7 @@ defineProps<{ src?: string; alt: string; eager?: boolean }>()
     class="bike-photo"
   >
   <div v-else class="bike-photo empty" role="img" :aria-label="`${alt} — фото скоро`">
-    <svg viewBox="0 0 120 70" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+    <svg v-if="!generic" viewBox="0 0 120 70" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <circle cx="24" cy="50" r="15" /><circle cx="97" cy="50" r="16" />
       <path d="M24 50 L52 44 M97 50 L81 14 M74 11 L88 8 M8 17 L30 27 L64 25 L80 19 M80 20 L60 32 L52 44 L66 45 L70 33 M86 31 L107 28" />
     </svg>

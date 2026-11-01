@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import type { Product } from '~/composables/useApi'
+import type { CatalogItem } from '~/composables/useApi'
 
 // Карточка байка целиком: одна и та же в окне на главной и на странице модели.
 const props = withDefaults(
-  defineProps<{ product: Product; titleTag?: 'h1' | 'h2'; titleId?: string; inModal?: boolean }>(),
+  defineProps<{ product: CatalogItem; titleTag?: 'h1' | 'h2'; titleId?: string; inModal?: boolean }>(),
   { titleTag: 'h1', titleId: undefined },
 )
 
@@ -16,20 +16,23 @@ const photoIndex = ref(0)
 const photo = computed(() => props.product.photos[photoIndex.value])
 
 const tag = computed(() => {
+  if (isGoods(props.product)) return props.product.availability === 'stock' ? 'В наличии' : 'Под заказ'
   if (props.product.stock) return 'В наличии в Москве'
   if (props.product.order) return 'Под заказ из Китая'
   return 'Нет в продаже'
 })
 
-const lead = computed(() => [props.product.powertrain_label, props.product.tagline].filter(Boolean).join(' · '))
+const lead = computed(() => [isGoods(props.product) ? props.product.category?.name : props.product.powertrain_label, props.product.tagline].filter(Boolean).join(' · '))
 
 const rateNote = computed(() => {
+  if (isGoods(props.product)) return ''
   const { rate, order } = props.product
   if (!rate || !order?.price_rub) return ''
   return `по курсу ${yuanPrice(rate.price_per_cny)} за юань, ${moscowDateTime(rate.fetched_at)}`
 })
 
 const facts = computed(() => {
+  if (isGoods(props.product)) return []
   const { colors, documents_label: documents } = props.product
   return [
     ...(colors ? [{ label: 'Цвета', value: colors }] : []),
@@ -43,7 +46,7 @@ const facts = computed(() => {
     <div class="top">
       <div class="gallery">
         <div class="stage">
-          <BikePhoto :src="photo?.url" :alt="product.title" eager />
+          <BikePhoto :src="photo?.url" :alt="product.title" :generic="isGoods(product)" eager />
         </div>
         <div v-if="product.photos.length > 1" class="thumbs">
           <button
@@ -66,7 +69,16 @@ const facts = computed(() => {
         <component :is="titleTag" :id="titleId" class="title">{{ product.title }}</component>
         <p v-if="lead" class="lead">{{ lead }}</p>
 
-        <div class="offers">
+        <div v-if="isGoods(product)" class="offers">
+          <div class="offer" :class="product.availability">
+            <div>
+              <div class="offer-name">{{ product.availability === 'stock' ? 'В наличии' : 'Под заказ' }}</div>
+              <div v-if="product.availability === 'order' && product.lead_time" class="offer-note">Срок поставки {{ product.lead_time }}</div>
+            </div>
+            <div class="offer-price">{{ rub(product.price_rub) }}</div>
+          </div>
+        </div>
+        <div v-else class="offers">
           <div class="offer stock" :class="{ off: !product.stock }">
             <div>
               <div class="offer-name">В наличии, Москва</div>
@@ -88,10 +100,10 @@ const facts = computed(() => {
           Написать менеджеру
         </a>
         <p class="note">
-          Покупка — через менеджера: он уточнит экземпляр, цвет и сроки.
+          {{ isGoods(product) ? 'Менеджер уточнит комплектацию, наличие и условия доставки.' : 'Покупка — через менеджера: он уточнит экземпляр, цвет и сроки.' }}
           <template v-if="rateNote">Цена под заказ — {{ rateNote }}.</template>
         </p>
-        <NuxtLink v-if="inModal" :to="`/catalog/${product.slug}`" class="permalink">Страница модели ↗</NuxtLink>
+        <NuxtLink v-if="inModal" :to="catalogItemPath(product)" class="permalink">Страница модели ↗</NuxtLink>
       </div>
     </div>
 

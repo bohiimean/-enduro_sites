@@ -1,4 +1,4 @@
-"""Каталог байков.
+"""Каталог байков и других товаров.
 
 Мастер каталога — админка сайта (решено 11.10.2026). Характеристики и две цены
 в лист Google Sheets не помещаются, поэтому импорт из него отменён. Бот до
@@ -7,6 +7,7 @@
 
 Рубли здесь не хранятся, кроме ручной цены «в наличии»: обе цены считаются на
 лету от цены завода в юанях и курса (`catalog/pricing.py`).
+Другие товары (Goods) имеют ручную цену в рублях и свободные характеристики.
 """
 from decimal import Decimal
 
@@ -314,3 +315,94 @@ class CatalogSettings(models.Model):
     def load(cls) -> "CatalogSettings":
         obj, _ = cls.objects.get_or_create(pk=1)
         return obj
+
+
+class GoodsCategory(models.Model):
+    """Группировка других товаров, без схемы характеристик."""
+
+    name = models.CharField("название", max_length=100, unique=True)
+    sort = models.PositiveIntegerField("порядок", default=0)
+
+    class Meta:
+        verbose_name = "категория других товаров"
+        verbose_name_plural = "категории других товаров"
+        ordering = ["sort", "name"]
+
+    def __str__(self):
+        return self.name
+
+
+class Goods(models.Model):
+    title = models.CharField("название", max_length=200)
+    slug = models.SlugField("адрес", max_length=220, unique=True, blank=True)
+    category = models.ForeignKey(
+        GoodsCategory, verbose_name="категория", on_delete=models.SET_NULL,
+        null=True, blank=True, related_name="goods",
+    )
+    tagline = models.CharField("коротко", max_length=160, blank=True)
+    description = models.TextField("описание", blank=True)
+    price_rub = models.DecimalField(
+        "цена, ₽", max_digits=12, decimal_places=2, null=True, blank=True,
+        validators=_NON_NEGATIVE,
+        help_text="Ручная цена, не зависит от курса. Пусто — «Цена по запросу».",
+    )
+    availability = models.CharField(
+        "наличие", max_length=8, default="order",
+        choices=[("stock", "В наличии"), ("order", "Под заказ")],
+    )
+    lead_time = models.CharField("срок поставки", max_length=60, blank=True)
+    is_published = models.BooleanField("опубликован", default=False)
+    sort = models.PositiveIntegerField("порядок", default=0)
+    created_at = models.DateTimeField("создан", auto_now_add=True)
+    updated_at = models.DateTimeField("изменён", auto_now=True)
+
+    class Meta:
+        verbose_name = "другой товар"
+        verbose_name_plural = "другие товары"
+        ordering = ["sort", "-created_at", "id"]
+
+    def __str__(self):
+        return self.title
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.title) or "goods"
+            slug, n = base, 1
+            while Goods.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                n += 1
+                slug = f"{base}-{n}"
+            self.slug = slug
+        super().save(*args, **kwargs)
+
+
+class GoodsSpec(models.Model):
+    product = models.ForeignKey(
+        Goods, verbose_name="товар", on_delete=models.CASCADE, related_name="specs",
+    )
+    name = models.CharField("параметр", max_length=80)
+    value = models.CharField("значение с единицей измерения", max_length=200)
+    sort = models.PositiveIntegerField("порядок", default=0)
+
+    class Meta:
+        verbose_name = "характеристика"
+        verbose_name_plural = "характеристики"
+        ordering = ["sort", "id"]
+
+    def __str__(self):
+        return f"{self.name}: {self.value}"
+
+
+class GoodsPhoto(models.Model):
+    product = models.ForeignKey(
+        Goods, verbose_name="товар", on_delete=models.CASCADE, related_name="photos",
+    )
+    image = models.ImageField("файл", upload_to="goods/%Y/%m")
+    sort = models.PositiveIntegerField("порядок", default=0)
+
+    class Meta:
+        verbose_name = "фото"
+        verbose_name_plural = "фото"
+        ordering = ["sort", "id"]
+
+    def __str__(self):
+        return f"Фото {self.product}"

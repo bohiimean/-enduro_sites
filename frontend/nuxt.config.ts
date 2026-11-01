@@ -35,6 +35,7 @@ export default defineNuxtConfig({
     // а isr рассчитан на edge-платформы.
     '/': { swr: 600 },
     '/catalog/**': { swr: 600 },
+    '/goods/**': { swr: 600 },
     '/rate': { ssr: true },
     '/account/**': { ssr: false },
     '/checkout/**': { ssr: false },

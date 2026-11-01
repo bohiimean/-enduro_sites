@@ -4,13 +4,15 @@ import type { Paginated, Product } from '~/composables/useApi'
 // Главная — каталог, по макету skl_moto.html.
 definePageMeta({ fullWidth: true })
 
-useHead({ title: 'SKL MOTO | Официальный дилер', titleTemplate: null })
+const route = useRoute()
+const goodsSection = computed(() => route.query.section === 'goods')
+
+useHead({ title: () => goodsSection.value ? 'Другие товары | SKL MOTO' : 'SKL MOTO | Официальный дилер', titleTemplate: null })
 useSeoMeta({
-  description: 'Эндуро и электро-эндуро: в наличии в Москве и под заказ напрямую с заводов Китая. '
+  description: () => goodsSection.value ? 'Техника и оборудование: характеристики, фотографии и цены. Заказ через менеджера.' : 'Эндуро и электро-эндуро: в наличии в Москве и под заказ напрямую с заводов Китая. '
     + 'Договор и оплата в рублях.',
 })
 
-const route = useRoute()
 const router = useRouter()
 const apiBase = useApiBase()
 
@@ -120,7 +122,7 @@ watch([availability, powertrain], () => {
 
 <template>
   <div>
-    <section class="hero">
+    <section v-if="!goodsSection" class="hero">
       <div class="container hero-row">
         <div class="hero-text">
           <span class="hero-tag">Импорт без посредников</span>
@@ -141,7 +143,14 @@ watch([availability, powertrain], () => {
       </div>
     </section>
 
-    <nav class="filters" aria-label="Фильтры каталога">
+    <nav class="sections container" aria-label="Разделы каталога">
+      <NuxtLink :to="{ path: '/', query: {} }" class="btn" :class="{ 'btn-outline': goodsSection }" :aria-current="!goodsSection ? 'page' : undefined">Мотоциклы</NuxtLink>
+      <NuxtLink :to="{ path: '/', query: { section: 'goods' } }" class="btn" :class="{ 'btn-outline': !goodsSection }" :aria-current="goodsSection ? 'page' : undefined">Другие товары</NuxtLink>
+    </nav>
+
+    <GoodsCatalog v-if="goodsSection" />
+
+    <nav v-if="!goodsSection" class="filters" aria-label="Фильтры каталога">
       <div class="container filters-row">
         <div class="filter-group">
           <NuxtLink
@@ -171,7 +180,7 @@ watch([availability, powertrain], () => {
       </div>
     </nav>
 
-    <section ref="catalog" class="container catalog" aria-labelledby="catalog-title">
+    <section v-if="!goodsSection" ref="catalog" class="container catalog" aria-labelledby="catalog-title">
       <h2 id="catalog-title" class="sr-only">Модели</h2>
 
       <p v-if="error" class="empty">Каталог не загрузился. Обновите страницу через минуту.</p>
@@ -199,11 +208,12 @@ watch([availability, powertrain], () => {
       </template>
     </section>
 
-    <ProductModal v-if="selected" :key="selected.slug" :product="selected" @close="closeBike" />
+    <ProductModal v-if="!goodsSection && selected" :key="selected.slug" :product="selected" @close="closeBike" />
   </div>
 </template>
 
 <style scoped>
+.sections { display: flex; flex-wrap: wrap; gap: .75rem; padding-top: 1.5rem; padding-bottom: 1.5rem; }
 .hero { background: var(--light); border-bottom: 1px solid var(--line); overflow: hidden; }
 .hero-row { display: grid; gap: 3rem; align-items: center; padding-top: 4rem; padding-bottom: 4rem; }
 .hero-text { display: grid; gap: 1.5rem; justify-items: start; }

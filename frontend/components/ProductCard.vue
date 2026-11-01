@@ -1,12 +1,15 @@
 <script setup lang="ts">
-import type { Product } from '~/composables/useApi'
+import type { CatalogItem } from '~/composables/useApi'
 
-const props = defineProps<{ product: Product; prefer?: 'stock' | 'order' }>()
+const props = defineProps<{ product: CatalogItem; prefer?: 'stock' | 'order' }>()
 const emit = defineEmits<{ open: [] }>()
 
 // Главная цена — та, что выбрана фильтром, без фильтра — «в наличии», если
 // байк есть. Вторая — рядом: в наличии дороже, человек выбирает сам.
 const offers = computed(() => {
+  if (isGoods(props.product)) {
+    return [{ label: props.product.availability === 'stock' ? 'В наличии' : 'Под заказ', price: props.product.price_rub }]
+  }
   const { stock, order } = props.product
   const list: { label: string; price: string | null }[] = []
   if (stock) list.push({ label: 'В наличии МСК', price: stock.price_rub })
@@ -17,6 +20,7 @@ const offers = computed(() => {
 // Карточка — настоящая ссылка на страницу модели: по ней ходит поиск, её
 // открывают в новой вкладке. Обычный клик вместо перехода открывает окно.
 function onClick(event: MouseEvent) {
+  if (isGoods(props.product)) return
   if (event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return
   event.preventDefault()
   emit('open')
@@ -25,9 +29,12 @@ function onClick(event: MouseEvent) {
 
 <template>
   <div class="shadow">
-    <a :href="`/catalog/${product.slug}`" class="bike" @click="onClick">
+    <a :href="catalogItemPath(product)" class="bike" @click="onClick">
       <div class="head">
-        <span v-if="product.stock" class="status stock">
+        <span v-if="isGoods(product)" class="status" :class="product.availability">
+          <span aria-hidden="true">● </span>{{ product.availability === 'stock' ? 'В наличии' : 'Под заказ' }}
+        </span>
+        <span v-else-if="product.stock" class="status stock">
           <span aria-hidden="true">● </span>В наличии: {{ product.stock.qty }} шт
         </span>
         <span v-else-if="product.order" class="status order"><span aria-hidden="true">● </span>Предзаказ КНР</span>
@@ -37,7 +44,7 @@ function onClick(event: MouseEvent) {
 
       <div class="body">
         <div class="photo">
-          <BikePhoto :src="product.photos[0]?.url" :alt="product.title" />
+          <BikePhoto :src="product.photos[0]?.url" :alt="product.title" :generic="isGoods(product)" />
         </div>
         <h3>{{ product.title }}</h3>
         <ul v-if="product.highlights.length" class="chips">

@@ -4,7 +4,10 @@ from django.contrib import admin
 from django.utils import timezone
 from django.utils.html import format_html_join
 
-from .models import Brand, CatalogSettings, Product, ProductPhoto, ProductSpec
+from .models import (
+    Brand, CatalogSettings, Goods, GoodsCategory, GoodsPhoto, GoodsSpec,
+    Product, ProductPhoto, ProductSpec,
+)
 from .pricing import CatalogRate, current_rate, offers
 
 
@@ -109,3 +112,38 @@ class CatalogSettingsAdmin(admin.ModelAdmin):
     @admin.display(description="курс сейчас")
     def rate_now(self, obj: CatalogSettings) -> str:
         return rate_line(current_rate(obj))
+
+
+class GoodsPhotoInline(admin.TabularInline):
+    model = GoodsPhoto
+    extra = 1
+    fields = ("image", "sort")
+
+
+class GoodsSpecInline(admin.TabularInline):
+    model = GoodsSpec
+    extra = 1
+    fields = ("name", "value", "sort")
+
+
+@admin.register(GoodsCategory)
+class GoodsCategoryAdmin(admin.ModelAdmin):
+    list_display = ("name", "sort")
+    list_editable = ("sort",)
+    search_fields = ("name",)
+
+
+@admin.register(Goods)
+class GoodsAdmin(admin.ModelAdmin):
+    list_display = ("title", "category", "price_rub", "availability", "is_published", "sort")
+    list_editable = ("price_rub", "availability", "is_published", "sort")
+    list_filter = ("category", "availability", "is_published")
+    search_fields = ("title", "description")
+    autocomplete_fields = ("category",)
+    readonly_fields = ("created_at", "updated_at")
+    inlines = [GoodsPhotoInline, GoodsSpecInline]
+    fieldsets = (
+        (None, {"fields": ("title", "category", "tagline", "description")}),
+        ("Цена и наличие", {"fields": ("price_rub", "availability", "lead_time")}),
+        ("Публикация", {"fields": ("is_published", "sort", "slug", "created_at", "updated_at")}),
+    )

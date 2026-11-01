@@ -54,6 +54,32 @@ export interface Product {
   photos: { id: number; url: string; sort: number }[]
 }
 
+/** Произвольные товары с ручной ценой в рублях. */
+export interface Goods {
+  id: number
+  slug: string
+  title: string
+  category: { id: number; name: string } | null
+  tagline: string
+  description: string
+  price_rub: string | null
+  availability: 'stock' | 'order'
+  lead_time: string
+  highlights: string[]
+  specs: SpecGroup[]
+  photos: { id: number; url: string; sort: number }[]
+}
+
+export type CatalogItem = Product | Goods
+
+export function isGoods(product: CatalogItem): product is Goods {
+  return 'price_rub' in product
+}
+
+export function catalogItemPath(product: CatalogItem): string {
+  return `${isGoods(product) ? '/goods' : '/catalog'}/${product.slug}`
+}
+
 export interface CatalogRate {
   price_per_cny: string
   fetched_at: string

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import Brand, Product, ProductPhoto
+from .models import Brand, Goods, GoodsCategory, Product, ProductPhoto
 from .pricing import offers
 from .specs import highlights, spec_groups
 
@@ -92,3 +92,30 @@ class ProductSerializer(serializers.ModelSerializer):
         data["order"] = OrderOfferSerializer(found.order).data if found.order else None
         data["rate"] = RateSerializer(found.rate).data if found.rate else None
         return data
+
+
+class GoodsCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GoodsCategory
+        fields = ["id", "name"]
+
+
+class GoodsSerializer(serializers.ModelSerializer):
+    category = GoodsCategorySerializer(read_only=True)
+    photos = ProductPhotoSerializer(many=True, read_only=True)
+    specs = serializers.SerializerMethodField()
+    highlights = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Goods
+        fields = [
+            "id", "slug", "title", "category", "tagline", "description", "price_rub",
+            "availability", "lead_time", "photos", "specs", "highlights",
+        ]
+
+    def get_specs(self, product):
+        items = [{"label": spec.name, "value": spec.value} for spec in product.specs.all()]
+        return [{"title": "Характеристики", "items": items}] if items else []
+
+    def get_highlights(self, product):
+        return [f"{spec.name}: {spec.value}" for spec in list(product.specs.all())[:3]]

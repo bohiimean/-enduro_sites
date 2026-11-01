@@ -7,7 +7,10 @@ from .phone import normalize_phone, to_e164
 
 # Всё, что под /api/ отвечает без входа. Новый публичный эндпоинт добавляется
 # сюда осознанно, вместе с кодом — иначе тест упадёт.
-PUBLIC_API = {"health", "pricing", "product-list", "product-detail", "catalog-terms"}
+PUBLIC_API = {
+    "health", "pricing", "product-list", "product-detail", "catalog-terms",
+    "goods-list", "goods-detail", "goods-category-list",
+}
 
 
 class PhoneNormalizationTests(SimpleTestCase):
@@ -78,6 +81,7 @@ class ApiClosedByDefaultTests(TestCase):
     def test_public_endpoints_answer_anonymous(self):
         client = Client()
         for path in ["/api/v1/health/", "/api/v1/pricing/", "/api/v1/catalog/products/",
-                     "/api/v1/catalog/terms/"]:
+                     "/api/v1/catalog/terms/", "/api/v1/catalog/goods/",
+                     "/api/v1/catalog/goods-categories/"]:
             with self.subTest(path=path):
                 self.assertEqual(client.get(path).status_code, 200)
