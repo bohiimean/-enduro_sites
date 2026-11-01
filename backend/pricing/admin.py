@@ -1,9 +1,10 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin, TabularInline
 
 from .models import MarkupRule, PaymentMethod, PricingSettings, RateQuote, RateSource
 
 
-class MarkupRuleInline(admin.TabularInline):
+class MarkupRuleInline(TabularInline):
     model = MarkupRule
     extra = 0
     fields = ("label", "kind", "value", "threshold_rub", "weekdays", "time_from", "time_to",
@@ -11,7 +12,7 @@ class MarkupRuleInline(admin.TabularInline):
 
 
 @admin.register(RateSource)
-class RateSourceAdmin(admin.ModelAdmin):
+class RateSourceAdmin(ModelAdmin):
     list_display = ("code", "title", "is_active", "last_value", "last_fetched")
     list_filter = ("is_active",)
     search_fields = ("code", "title")
@@ -28,7 +29,7 @@ class RateSourceAdmin(admin.ModelAdmin):
 
 
 @admin.register(RateQuote)
-class RateQuoteAdmin(admin.ModelAdmin):
+class RateQuoteAdmin(ModelAdmin):
     list_display = ("source", "value", "fetched_at", "created_at")
     list_filter = ("source",)
     date_hierarchy = "fetched_at"
@@ -41,7 +42,7 @@ class RateQuoteAdmin(admin.ModelAdmin):
 
 
 @admin.register(PaymentMethod)
-class PaymentMethodAdmin(admin.ModelAdmin):
+class PaymentMethodAdmin(ModelAdmin):
     list_display = ("title", "code", "source", "is_active", "sort")
     list_filter = ("is_active", "source")
     list_editable = ("sort", "is_active")
@@ -49,7 +50,7 @@ class PaymentMethodAdmin(admin.ModelAdmin):
 
 
 @admin.register(MarkupRule)
-class MarkupRuleAdmin(admin.ModelAdmin):
+class MarkupRuleAdmin(ModelAdmin):
     list_display = ("method", "label", "kind", "value", "threshold_rub", "weekdays",
                     "time_from", "time_to", "is_active", "sort")
     list_filter = ("method", "kind", "is_active")
@@ -57,7 +58,7 @@ class MarkupRuleAdmin(admin.ModelAdmin):
 
 
 @admin.register(PricingSettings)
-class PricingSettingsAdmin(admin.ModelAdmin):
+class PricingSettingsAdmin(ModelAdmin):
     list_display = ("__str__", "cny_divisor", "stale_after_minutes", "updated_at")
 
     def has_add_permission(self, request):

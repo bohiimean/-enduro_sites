@@ -1,10 +1,11 @@
 from django.contrib import admin, messages
+from unfold.admin import ModelAdmin, TabularInline
 from django.utils import timezone
 
 from .models import KycDocument, Payer, Payment
 
 
-class KycDocumentInline(admin.TabularInline):
+class KycDocumentInline(TabularInline):
     model = KycDocument
     extra = 0
     fields = ("doc_type", "uploaded_by", "uploaded_at", "low_confidence", "consent_at")
@@ -13,7 +14,7 @@ class KycDocumentInline(admin.TabularInline):
 
 
 @admin.register(Payer)
-class PayerAdmin(admin.ModelAdmin):
+class PayerAdmin(ModelAdmin):
     list_display = ("phone", "kyc_status", "expected_payer_name", "processing",
                     "manual_review", "last_checked_at", "watch_since")
     list_filter = ("kyc_status", "processing", "manual_review")
@@ -41,7 +42,7 @@ class IssueFilter(admin.SimpleListFilter):
 
 
 @admin.register(Payment)
-class PaymentAdmin(admin.ModelAdmin):
+class PaymentAdmin(ModelAdmin):
     list_display = ("external_payment_id", "user", "phone", "amount_rub", "amount_cny",
                     "price_per_cny", "status", "paid_at", "issued_at", "created_at")
     list_filter = (IssueFilter, "status", "created_at")
@@ -86,7 +87,7 @@ class PaymentAdmin(admin.ModelAdmin):
 
 
 @admin.register(KycDocument)
-class KycDocumentAdmin(admin.ModelAdmin):
+class KycDocumentAdmin(ModelAdmin):
     list_display = ("payer", "doc_type", "uploaded_by", "uploaded_at", "low_confidence")
     list_filter = ("doc_type", "low_confidence")
     search_fields = ("payer__phone",)

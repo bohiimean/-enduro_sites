@@ -1,16 +1,17 @@
 from django.contrib import admin
+from unfold.admin import ModelAdmin
 
 from .models import Order, SupplyStatus
 
 
 @admin.register(SupplyStatus)
-class SupplyStatusAdmin(admin.ModelAdmin):
+class SupplyStatusAdmin(ModelAdmin):
     list_display = ("name", "sort", "is_final")
     list_editable = ("sort", "is_final")
 
 
 @admin.register(Order)
-class OrderAdmin(admin.ModelAdmin):
+class OrderAdmin(ModelAdmin):
     list_display = ("id", "title", "phone", "full_name", "city", "price", "paid",
                     "remainder_display", "supply_status", "ordered_at")
     list_filter = ("supply_status", "city", "ordered_at")

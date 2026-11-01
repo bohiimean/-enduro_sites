@@ -20,6 +20,8 @@ ALLOWED_HOSTS = _list("DJANGO_ALLOWED_HOSTS", "localhost,127.0.0.1,backend")
 CSRF_TRUSTED_ORIGINS = _list("DJANGO_CSRF_TRUSTED_ORIGINS", "http://localhost:8080")
 
 INSTALLED_APPS = [
+    "unfold",
+    "unfold.contrib.filters",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
@@ -285,3 +287,6 @@ LOGGING = {
 # стектрейсами, и за этим шумом не видно итога прогона.
 if "test" in sys.argv[1:2]:
     LOGGING["root"]["level"] = "CRITICAL"
+
+# Оформление и навигация панели управления.
+from .admin import UNFOLD  # noqa: E402

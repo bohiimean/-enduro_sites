@@ -7,3 +7,4 @@ APScheduler==3.11.0
 gunicorn==23.0.0
 requests==2.32.3
 django-allauth==65.19.4
+django-unfold==0.110.1

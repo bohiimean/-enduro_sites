@@ -243,7 +243,7 @@ class ProductSpec(models.Model):
     )
     name = models.CharField("параметр", max_length=80)
     value = models.CharField("значение", max_length=200)
-    sort = models.PositiveIntegerField("порядок", default=0)
+    sort = models.PositiveIntegerField("порядок", default=0, db_index=True)
 
     class Meta:
         verbose_name = "доп. характеристика"
@@ -259,7 +259,7 @@ class ProductPhoto(models.Model):
         Product, verbose_name="байк", on_delete=models.CASCADE, related_name="photos"
     )
     image = models.ImageField("файл", upload_to="catalog/%Y/%m")
-    sort = models.PositiveIntegerField("порядок", default=0)
+    sort = models.PositiveIntegerField("порядок", default=0, db_index=True)
 
     class Meta:
         verbose_name = "фото"
@@ -381,7 +381,7 @@ class GoodsSpec(models.Model):
     )
     name = models.CharField("параметр", max_length=80)
     value = models.CharField("значение с единицей измерения", max_length=200)
-    sort = models.PositiveIntegerField("порядок", default=0)
+    sort = models.PositiveIntegerField("порядок", default=0, db_index=True)
 
     class Meta:
         verbose_name = "характеристика"
@@ -397,7 +397,7 @@ class GoodsPhoto(models.Model):
         Goods, verbose_name="товар", on_delete=models.CASCADE, related_name="photos",
     )
     image = models.ImageField("файл", upload_to="goods/%Y/%m")
-    sort = models.PositiveIntegerField("порядок", default=0)
+    sort = models.PositiveIntegerField("порядок", default=0, db_index=True)
 
     class Meta:
         verbose_name = "фото"
