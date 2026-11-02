@@ -74,7 +74,8 @@ class ApiClosedByDefaultTests(TestCase):
 
     def test_private_endpoints_refuse_anonymous(self):
         client = Client()
-        for path in ["/api/v1/account/me/", "/api/v1/account/phones/", "/api/v1/account/phones/1/"]:
+        for path in ["/api/v1/account/me/", "/api/v1/account/phones/", "/api/v1/account/phones/1/",
+                     "/api/v1/orders/", "/api/v1/orders/phone/"]:
             with self.subTest(path=path):
                 self.assertIn(client.get(path).status_code, (401, 403))
 
