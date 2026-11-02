@@ -1,12 +1,15 @@
 <script setup lang="ts">
 const { state, session, signup, firstError } = useAuth()
 
+const { next, authLink } = useAuthNext()
+const cart = useCart()
 useHead({ title: 'Регистрация' })
 
 // Вошедшему регистрация не нужна: allauth ответил бы 409 без текста.
 onMounted(async () => {
+  cart.initialize()
   if (!state.value.ready) await session()
-  if (state.value.user) return navigateTo('/account')
+  if (state.value.user) return navigateTo(next.value)
 })
 
 const email = ref('')
@@ -32,7 +35,7 @@ async function submit() {
   // При обязательном подтверждении почты удачная регистрация отвечает 401:
   // аккаунт создан, но вход ещё закрыт до кода из письма. Это не ошибка.
   if (payload.status === 401 || payload.status === 200) {
-    return navigateTo('/account/verify-email')
+    return navigateTo(authLink('/account/verify-email'))
   }
 
   if (payload.status === 409) {
@@ -49,8 +52,8 @@ async function submit() {
     <h1>Регистрация</h1>
 
     <p class="lead">
-      Для входа нужны только почта и пароль. Номер телефона спросим позже — в
-      сценарии оплаты, где он и нужен.
+      Для входа нужны только почта и пароль. Телефон понадобится
+      при заявке менеджеру или оплате.
     </p>
 
     <form class="card" @submit.prevent="submit">
@@ -77,7 +80,7 @@ async function submit() {
     </form>
 
     <p class="muted">
-      Уже есть аккаунт? <NuxtLink to="/account/login">Войти</NuxtLink>.
+      Уже есть аккаунт? <NuxtLink :to="authLink('/account/login')">Войти</NuxtLink>.
     </p>
   </section>
 </template>

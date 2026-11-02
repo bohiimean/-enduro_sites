@@ -9,7 +9,7 @@ from .phone import normalize_phone, to_e164
 # сюда осознанно, вместе с кодом — иначе тест упадёт.
 PUBLIC_API = {
     "health", "pricing", "product-list", "product-detail", "catalog-terms",
-    "goods-list", "goods-detail", "goods-category-list",
+    "goods-list", "goods-detail", "goods-category-list", "product-by-id", "goods-by-id",
 }
 
 
@@ -75,7 +75,8 @@ class ApiClosedByDefaultTests(TestCase):
     def test_private_endpoints_refuse_anonymous(self):
         client = Client()
         for path in ["/api/v1/account/me/", "/api/v1/account/phones/", "/api/v1/account/phones/1/",
-                     "/api/v1/orders/", "/api/v1/orders/phone/"]:
+                     "/api/v1/orders/", "/api/v1/orders/phone/", "/api/v1/requests/",
+                     "/api/v1/requests/contact/", "/api/v1/requests/1/"]:
             with self.subTest(path=path):
                 self.assertIn(client.get(path).status_code, (401, 403))
 

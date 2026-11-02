@@ -95,7 +95,7 @@ const facts = computed(() => {
           </div>
         </div>
 
-        <!-- Корзины нет: байки на сайте не продаются, карточка ведёт к менеджеру. -->
+        <AddToCart :product="product" />
         <a v-if="telegram" :href="`https://t.me/${telegram}`" target="_blank" rel="noopener" class="btn cta">
           Написать менеджеру
         </a>

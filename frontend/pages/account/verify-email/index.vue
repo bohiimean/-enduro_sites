@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const { state, verifyEmailCode, resendEmailCode, firstError } = useAuth()
 
+const { next, authLink } = useAuthNext()
 useHead({ title: 'Подтверждение почты' })
 
 const code = ref('')
@@ -21,7 +22,7 @@ async function submit() {
 
   busy.value = false
 
-  if (payload.status === 200) return navigateTo('/account')
+  if (payload.status === 200) return navigateTo(next.value)
 
   if (payload.status === 409) {
     error.value = 'Подтверждать нечего: похоже, ожидание кода истекло. Войдите заново — пришлём новый.'
@@ -90,6 +91,7 @@ async function resend() {
     </form>
 
     <p class="muted">
+      <NuxtLink :to="authLink('/account/login')">Войти заново</NuxtLink>.
       Код действует 15 минут. Письма нет?
       <button class="link" type="button" :disabled="busy" @click="resend">
         Прислать заново

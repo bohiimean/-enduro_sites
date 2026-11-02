@@ -68,16 +68,18 @@ function onClick(event: MouseEvent) {
         </div>
       </div>
     </a>
+    <div class="cart-action"><AddToCart :product="product" :prefer="prefer" /></div>
   </div>
 </template>
 
 <style scoped>
+.cart-action { padding: 1rem 1.5rem; background: #fff; border: 2px solid var(--line); border-top: 0; }
 /* Тень — фильтром на обёртке: срезанные углы карточки обрезали бы обычную. */
-.shadow { height: 100%; transition: filter .3s; }
+.shadow { display: flex; flex-direction: column; height: 100%; transition: filter .3s; }
 .shadow:hover { filter: drop-shadow(0 14px 18px rgb(17 24 39 / .12)); }
 
 .bike {
-  display: flex; flex-direction: column; height: 100%;
+  display: flex; flex-direction: column; flex: 1;
   background: #fff; border: 2px solid var(--line); color: var(--fg); text-decoration: none;
   clip-path: polygon(15px 0, 100% 0, 100% calc(100% - 15px), calc(100% - 15px) 100%, 0 100%, 0 15px);
   transition: border-color .3s;

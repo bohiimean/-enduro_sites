@@ -1,7 +1,7 @@
 from django.contrib import admin, messages
-from unfold.admin import ModelAdmin
+from unfold.admin import ModelAdmin, TabularInline
 
-from .models import Order, OrderPhone, SupplyStatus
+from .models import Order, OrderPhone, PurchaseRequest, PurchaseRequestItem, SupplyStatus
 
 
 @admin.register(SupplyStatus)
@@ -89,3 +89,30 @@ class OrderPhoneAdmin(ModelAdmin):
                 messages.WARNING,
             )
         return super().changelist_view(request, extra_context)
+
+
+class PurchaseRequestItemInline(TabularInline):
+    model = PurchaseRequestItem
+    extra = 0
+    can_delete = False
+    fields = ("title", "offer", "quantity", "unit_price_rub")
+    readonly_fields = fields
+
+    def has_add_permission(self, request, obj=None):
+        return False
+
+
+@admin.register(PurchaseRequest)
+class PurchaseRequestAdmin(ModelAdmin):
+    list_display = ("id", "name", "phone", "status", "manager_note", "created_at")
+    list_display_links = ("id", "name")
+    list_editable = ("status",)
+    list_filter = ("status", "created_at")
+    search_fields = ("name", "phone", "user__email", "items__title")
+    readonly_fields = ("user", "name", "phone", "created_at", "updated_at")
+    fields = ("user", "name", "phone", "status", "manager_note", "created_at", "updated_at")
+    inlines = [PurchaseRequestItemInline]
+    date_hierarchy = "created_at"
+
+    def has_add_permission(self, request):
+        return False

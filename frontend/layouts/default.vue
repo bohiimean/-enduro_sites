@@ -6,6 +6,7 @@ const telegram = useRuntimeConfig().public.managerTelegram
 const { data: terms } = useCatalogTerms()
 const yuan = computed(() => (terms.value?.rate ? yuanPrice(terms.value.rate.price_per_cny) : ''))
 
+const cart = useCart()
 const year = new Date().getFullYear()
 </script>
 
@@ -35,6 +36,7 @@ const year = new Date().getFullYear()
           <NuxtLink to="/">Каталог</NuxtLink>
           <NuxtLink to="/rate">Курс юаня</NuxtLink>
         </nav>
+        <NuxtLink to="/cart" class="cart-link">Корзина<ClientOnly><span v-if="cart.count.value"> ({{ cart.count.value }})</span></ClientOnly></NuxtLink>
         <NuxtLink to="/account" class="btn btn-outline cabinet">
           <span class="long">Личный кабинет</span><span class="short">Кабинет</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -105,6 +107,7 @@ const year = new Date().getFullYear()
 }
 .nav a:hover, .nav a.router-link-exact-active { color: var(--accent); }
 
+.cart-link { color: var(--fg); text-decoration: none; white-space: nowrap; font: 600 .875rem/1 var(--display); }
 .cabinet { padding: .625rem 1.5rem; }
 .cabinet svg { width: 1rem; height: 1rem; color: var(--accent); }
 .cabinet .short { display: none; }
@@ -118,15 +121,23 @@ const year = new Date().getFullYear()
 .footer-nav a { color: inherit; text-decoration: none; }
 .footer-nav a:hover { color: var(--accent-ink); }
 
-@media (max-width: 860px) {
+@media (max-width: 1000px) {
   .nav { display: none; }
 }
 
 @media (max-width: 640px) {
+  .header-row { gap: .75rem; }
+  .logo-word { display: none; }
   .logo-mark, .logo-word { font-size: 1.5rem; line-height: 2rem; }
   .logo { gap: .5rem; }
   .cabinet { padding: .5rem 1rem; }
   .cabinet .long { display: none; }
   .cabinet .short { display: inline; }
+}
+@media (max-width: 400px) {
+  .header-row { gap: .5rem; }
+  .cabinet { padding: .5rem; }
+  .cabinet svg { display: none; }
+  .cart-link { font-size: .8rem; }
 }
 </style>

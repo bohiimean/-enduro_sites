@@ -176,3 +176,55 @@ def orders_for(user: User) -> "models.QuerySet[Order]":
         .select_related("supply_status")
         .order_by(models.F("ordered_at").desc(nulls_last=True), "-created_at")
     )
+
+
+class PurchaseRequest(models.Model):
+    """Обращение из корзины, до согласования покупки с менеджером."""
+
+    STATUS_CHOICES = [
+        ("new", "Новая"), ("in_progress", "В работе"),
+        ("agreed", "Согласована"), ("cancelled", "Отменена"),
+    ]
+    user = models.ForeignKey(
+        User, verbose_name="клиент", on_delete=models.PROTECT, related_name="purchase_requests",
+    )
+    name = models.CharField("имя", max_length=150)
+    phone = models.CharField("телефон для связи", max_length=16)
+    status = models.CharField("статус", max_length=16, choices=STATUS_CHOICES, default="new")
+    manager_note = models.TextField("заметка менеджера", blank=True, help_text="Клиенту не показывается.")
+    submission_key = models.UUIDField("ключ отправки", editable=False)
+    payload_hash = models.CharField(max_length=64, editable=False)
+    created_at = models.DateTimeField("создана", auto_now_add=True)
+    updated_at = models.DateTimeField("изменена", auto_now=True)
+
+    class Meta:
+        verbose_name = "заявка на покупку"
+        verbose_name_plural = "заявки на покупку"
+        ordering = ["-created_at", "-id"]
+        constraints = [models.UniqueConstraint(fields=["user", "submission_key"], name="unique_request_submission")]
+
+    def __str__(self):
+        return f"Заявка №{self.pk} — {self.name}"
+
+    @property
+    def client_status(self):
+        return "Ожидает обработки" if self.status == "new" else self.get_status_display()
+
+
+class PurchaseRequestItem(models.Model):
+    request = models.ForeignKey(PurchaseRequest, on_delete=models.CASCADE, related_name="items")
+    kind = models.CharField("тип", max_length=8, choices=[("bike", "Байк"), ("goods", "Другой товар")])
+    bike = models.ForeignKey("catalog.Product", on_delete=models.SET_NULL, null=True, blank=True)
+    goods = models.ForeignKey("catalog.Goods", on_delete=models.SET_NULL, null=True, blank=True)
+    title = models.CharField("название на момент заявки", max_length=300)
+    offer = models.CharField("предложение", max_length=8, choices=[("stock", "В наличии"), ("order", "Под заказ")])
+    quantity = models.PositiveSmallIntegerField("количество")
+    unit_price_rub = models.DecimalField("предварительная цена, ₽", max_digits=12, decimal_places=2, null=True, blank=True)
+
+    class Meta:
+        verbose_name = "позиция заявки"
+        verbose_name_plural = "состав заявки"
+        ordering = ["id"]
+
+    def __str__(self):
+        return f"{self.title} × {self.quantity}"

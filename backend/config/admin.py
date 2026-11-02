@@ -11,6 +11,7 @@ NAVIGATION = (
         ("Марки", "sell", "catalog.brand"),
     )),
     ("Заказы", (
+        ("Заявки на покупку", "shopping_cart", "orders.purchaserequest"),
         ("Заказы и поставки", "local_shipping", "orders.order"),
         ("Номера для заказов", "contact_phone", "orders.orderphone"),
         ("Статусы поставки", "checklist", "orders.supplystatus"),

@@ -237,6 +237,7 @@ REST_FRAMEWORK = {
         "kyc_ip": "60/min",
         "kyc_upload": "10/hour",
         "payment_create": "10/hour",
+        "purchase_request": "10/hour",
     },
 }
 

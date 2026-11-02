@@ -101,3 +101,11 @@ class GoodsCategoryListView(generics.ListAPIView):
     serializer_class = GoodsCategorySerializer
     pagination_class = None
     queryset = GoodsCategory.objects.filter(goods__is_published=True).distinct()
+
+
+class ProductByIdView(CatalogViewMixin, generics.RetrieveAPIView):
+    pass
+
+
+class GoodsByIdView(GoodsViewMixin, generics.RetrieveAPIView):
+    pass
