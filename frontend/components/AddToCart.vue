@@ -24,7 +24,7 @@ function add() {
       </select>
     </label>
     <button type="button" class="btn" @click="add">В корзину</button>
-    <p v-if="notice" class="cart-notice" role="status">{{ notice }}. <NuxtLink to="/cart">Перейти →</NuxtLink></p>
+    <p v-if="notice" class="cart-notice" role="status">{{ notice }}. <button type="button" class="open-cart" @click="cart.open">Открыть →</button></p>
     <p v-if="error" class="err" role="alert">{{ error }}</p>
   </div>
 </template>
@@ -34,5 +34,6 @@ function add() {
 label { display: grid; gap: .25rem; font-size: .75rem; color: var(--muted); }
 select { width: 100%; background: #fff; padding: .625rem; border: 1px solid var(--line); color: var(--fg); }
 .btn { width: 100%; }
+.open-cart { background: none; border: 0; padding: 0; color: var(--accent); font: inherit; text-decoration: underline; }
 .cart-notice, .err { margin: 0; font-size: .8rem; }
 </style>

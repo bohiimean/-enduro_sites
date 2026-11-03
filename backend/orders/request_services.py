@@ -53,6 +53,8 @@ def submit_request(user, data):
     # Блокировка аккаунта сериализует повторные отправки даже в разных процессах.
     User.objects.select_for_update().get(pk=user.pk)
     payload = {key: data[key] for key in ("name", "phone", "items")}
+    # Пустые новые поля не меняют отпечаток заявок, отправленных до обновления.
+    payload.update({key: data[key] for key in ("city", "payment_method") if data.get(key)})
     fingerprint = hashlib.sha256(json.dumps(payload, sort_keys=True, ensure_ascii=False).encode()).hexdigest()
     existing = PurchaseRequest.objects.filter(user=user, submission_key=data["submission_key"]).first()
     if existing:
@@ -62,6 +64,7 @@ def submit_request(user, data):
     items = snapshot_items(data["items"])
     purchase_request = PurchaseRequest.objects.create(
         user=user, name=data["name"], phone=data["phone"],
+        city=data.get("city", ""), payment_method=data.get("payment_method", ""),
         submission_key=data["submission_key"], payload_hash=fingerprint,
     )
     for item in items:

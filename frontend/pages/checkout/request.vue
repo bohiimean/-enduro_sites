@@ -39,7 +39,7 @@ async function submit() {
   const submissionKey = cart.submissionKey.value
   const items = cart.items.value.map((i) => ({ ...i }))
   try {
-    const result = await api.submit({ name: name.value.trim(), phone: phone.value.trim(), submission_key: submissionKey, items })
+    const result = await api.submit({ name: name.value.trim(), phone: phone.value.trim(), city: cart.city.value.trim(), payment_method: cart.paymentMethod.value, submission_key: submissionKey, items })
     cart.completed(submissionKey)
     await navigateTo({ path: `/account/requests/${result.id}`, query: { sent: '1' } })
   } catch (e) {
@@ -65,9 +65,10 @@ async function submit() {
       <p v-if="catalog.error.value" class="err" role="alert">{{ catalog.error.value }} <button type="button" @click="catalog.refresh">Повторить</button></p>
       <template v-if="cart.items.value.length">
         <CartContents v-if="!catalog.loading.value" :rows="catalog.rows.value" />
-        <NuxtLink to="/cart">Изменить корзину</NuxtLink>
+        <button type="button" class="btn btn-outline" @click="cart.open">Изменить корзину</button>
         <form class="card contact-form" @submit.prevent="submit">
           <p v-if="notice" class="muted">{{ notice }}</p>
+          <RequestOptions :disabled="busy" />
           <label>Имя <input v-model="name" autocomplete="name" maxlength="150" required :disabled="busy"></label>
           <label>Телефон для связи <input v-model="phone" type="tel" autocomplete="tel" maxlength="32" placeholder="+7 912 345-67-89" required :disabled="busy"></label>
           <strong>Предварительно: {{ catalog.total.value === null ? 'Есть цены по запросу' : rub(catalog.total.value) }}</strong>

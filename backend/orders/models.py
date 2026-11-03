@@ -185,6 +185,9 @@ class PurchaseRequest(models.Model):
         ("new", "Новая"), ("in_progress", "В работе"),
         ("agreed", "Согласована"), ("cancelled", "Отменена"),
     ]
+    PAYMENT_METHODS = [("cash_moscow", "Наличные в Москве"), ("sbp", "СБП"), ("usdt", "USDT")]
+    city = models.CharField("город доставки", max_length=150, blank=True)
+    payment_method = models.CharField("способ оплаты", max_length=16, choices=PAYMENT_METHODS, blank=True)
     user = models.ForeignKey(
         User, verbose_name="клиент", on_delete=models.PROTECT, related_name="purchase_requests",
     )

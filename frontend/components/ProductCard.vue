@@ -39,7 +39,6 @@ function onClick(event: MouseEvent) {
         </span>
         <span v-else-if="product.order" class="status order"><span aria-hidden="true">● </span>Предзаказ КНР</span>
         <span v-else class="status"><span aria-hidden="true">● </span>Нет в продаже</span>
-        <span class="more" aria-hidden="true">Подробнее ↗</span>
       </div>
 
       <div class="body">
@@ -64,7 +63,6 @@ function onClick(event: MouseEvent) {
             </div>
           </div>
           <p v-else class="label unavailable">Сейчас не продаётся — уточните у менеджера</p>
-          <span class="btn">Подробнее</span>
         </div>
       </div>
     </a>
@@ -95,8 +93,6 @@ function onClick(event: MouseEvent) {
 .status { color: var(--muted); }
 .status.stock { color: var(--ok); }
 .status.order { color: var(--accent); }
-.more { color: var(--muted); white-space: nowrap; transition: color .2s; }
-.bike:hover .more { color: var(--accent); }
 
 .body { display: flex; flex-direction: column; flex: 1; padding: 1.5rem; }
 .photo { height: 10rem; margin-bottom: 1rem; overflow: hidden; }
@@ -112,11 +108,10 @@ h3 { margin: 0 0 .625rem; font-size: 1.5rem; line-height: 1.25; font-weight: 700
 .tagline { margin: 0 0 1.5rem; min-height: 2rem; font-size: .75rem; line-height: 1rem; color: var(--muted); }
 
 .foot { margin-top: auto; padding-top: 1rem; border-top: 1px solid var(--line); }
-.prices { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; margin-bottom: 1rem; }
+.prices { display: flex; justify-content: space-between; align-items: flex-end; gap: 1rem; }
 .label { font: 400 .625rem/1rem var(--display); text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
 .price { font: 700 1.5rem/2rem var(--display); }
 .alt { text-align: right; }
 .alt-price { font: 600 1rem/1.5rem var(--display); color: var(--muted); }
-.unavailable { margin: 0 0 1rem; font-size: .75rem; }
-.btn { width: 100%; padding: .625rem 1rem; }
+.unavailable { margin: 0; font-size: .75rem; }
 </style>

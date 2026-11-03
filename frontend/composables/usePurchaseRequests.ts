@@ -7,6 +7,7 @@ export interface PurchaseRequestItem {
 }
 export interface PurchaseRequest {
   id: number; name: string; phone: string; status: string; status_label: string; created_at: string
+  city: string; payment_method: string; payment_method_label: string
   items: PurchaseRequestItem[]
 }
 export function purchaseRequestTotal(request: PurchaseRequest): string | null {
@@ -29,7 +30,7 @@ export function usePurchaseRequests() {
     list: (offset = 0) => $fetch<Paginated<PurchaseRequest>>(baseURL, { query: { offset } }),
     detail: (id: string) => $fetch<PurchaseRequest>(`${baseURL}${id}/`),
     contact: () => $fetch<{ name: string; phone: string }>(`${baseURL}contact/`),
-    submit: (body: { name: string; phone: string; submission_key: string; items: CartLine[] }) => $fetch<PurchaseRequest>(baseURL, {
+    submit: (body: { name: string; phone: string; city: string; payment_method: string; submission_key: string; items: CartLine[] }) => $fetch<PurchaseRequest>(baseURL, {
       method: 'POST', body, headers: { 'X-CSRFToken': csrfToken() },
     }),
   }

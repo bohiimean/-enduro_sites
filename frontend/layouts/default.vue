@@ -36,7 +36,7 @@ const year = new Date().getFullYear()
           <NuxtLink to="/">Каталог</NuxtLink>
           <NuxtLink to="/rate">Курс юаня</NuxtLink>
         </nav>
-        <NuxtLink to="/cart" class="cart-link">Корзина<ClientOnly><span v-if="cart.count.value"> ({{ cart.count.value }})</span></ClientOnly></NuxtLink>
+        <button type="button" class="cart-link" aria-haspopup="dialog" @click="cart.open">Корзина<ClientOnly><span v-if="cart.count.value"> ({{ cart.count.value }})</span></ClientOnly></button>
         <NuxtLink to="/account" class="btn btn-outline cabinet">
           <span class="long">Личный кабинет</span><span class="short">Кабинет</span>
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
@@ -49,6 +49,8 @@ const year = new Date().getFullYear()
     <main class="main" :class="{ page: !route.meta.fullWidth }">
       <slot />
     </main>
+
+    <ClientOnly><CartDrawer v-if="cart.isOpen.value" /></ClientOnly>
 
     <footer class="footer">
       <div class="container footer-row">
@@ -107,7 +109,7 @@ const year = new Date().getFullYear()
 }
 .nav a:hover, .nav a.router-link-exact-active { color: var(--accent); }
 
-.cart-link { color: var(--fg); text-decoration: none; white-space: nowrap; font: 600 .875rem/1 var(--display); }
+.cart-link { background: transparent; border: 0; padding: .5rem 0; color: var(--fg); text-decoration: none; white-space: nowrap; font: 600 .875rem/1 var(--display); }
 .cabinet { padding: .625rem 1.5rem; }
 .cabinet svg { width: 1rem; height: 1rem; color: var(--accent); }
 .cabinet .short { display: none; }

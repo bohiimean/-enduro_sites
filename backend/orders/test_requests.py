@@ -76,6 +76,26 @@ class PurchaseRequestTests(TestCase):
         self.assertEqual(obj.user, self.user)
         self.assertEqual(obj.manager_note, "")
 
+    def test_delivery_and_payment_saved_and_retry_checked(self):
+        data = self.payload(city="Казань", payment_method="usdt")
+        first = self.post(data)
+        self.assertEqual(first.status_code, 201)
+        self.assertEqual(first.json()["city"], "Казань")
+        self.assertEqual(first.json()["payment_method_label"], "USDT")
+        obj = PurchaseRequest.objects.get()
+        self.assertEqual((obj.city, obj.payment_method), ("Казань", "usdt"))
+        self.assertEqual(self.post(data).status_code, 200)
+        data["city"] = "Москва"
+        self.assertEqual(self.post(data).status_code, 409)
+        data["city"] = "Казань"
+        data["payment_method"] = "sbp"
+        self.assertEqual(self.post(data).status_code, 409)
+
+    def test_invalid_delivery_and_payment(self):
+        for changes in ({"city": "x" * 151}, {"payment_method": "other"}):
+            self.assertEqual(self.post(self.payload(**changes)).status_code, 400)
+        self.assertFalse(PurchaseRequest.objects.exists())
+
     def test_bike_order_price_uses_catalog_formula(self):
         make_rate()
         data = self.payload(items=[{"kind": "bike", "product_id": self.bike.pk, "offer": "order", "quantity": 1}])

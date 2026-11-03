@@ -104,13 +104,13 @@ class PurchaseRequestItemInline(TabularInline):
 
 @admin.register(PurchaseRequest)
 class PurchaseRequestAdmin(ModelAdmin):
-    list_display = ("id", "name", "phone", "status", "manager_note", "created_at")
+    list_display = ("id", "name", "phone", "city", "payment_method", "status", "manager_note", "created_at")
     list_display_links = ("id", "name")
     list_editable = ("status",)
-    list_filter = ("status", "created_at")
-    search_fields = ("name", "phone", "user__email", "items__title")
-    readonly_fields = ("user", "name", "phone", "created_at", "updated_at")
-    fields = ("user", "name", "phone", "status", "manager_note", "created_at", "updated_at")
+    list_filter = ("status", "payment_method", "created_at")
+    search_fields = ("name", "phone", "city", "user__email", "items__title")
+    readonly_fields = ("user", "name", "phone", "city", "payment_method", "created_at", "updated_at")
+    fields = ("user", "name", "phone", "city", "payment_method", "status", "manager_note", "created_at", "updated_at")
     inlines = [PurchaseRequestItemInline]
     date_hierarchy = "created_at"
 

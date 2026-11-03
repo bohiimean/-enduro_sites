@@ -8,6 +8,8 @@ defineProps<{ request: PurchaseRequest }>()
     <div class="request-heading"><h2>Заявка №{{ request.id }}</h2><strong class="status">{{ request.status_label }}</strong></div>
     <p class="muted">{{ moscowDateTime(request.created_at) }}</p>
     <p>{{ request.name }} · {{ request.phone }}</p>
+    <p v-if="request.city">Город доставки: {{ request.city }}</p>
+    <p v-if="request.payment_method">Способ оплаты: {{ request.payment_method_label }}</p>
     <ul class="request-items">
       <li v-for="item in request.items" :key="item.id">
         <div><strong>{{ item.title }}</strong><span class="muted">{{ item.offer_label }} · {{ item.quantity }} шт.</span></div>

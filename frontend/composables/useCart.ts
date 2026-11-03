@@ -7,11 +7,15 @@ export interface CartLine {
   quantity: number
 }
 
+export type RequestPaymentMethod = '' | 'cash_moscow' | 'sbp' | 'usdt'
+
 const STORAGE_KEY = 'skl-cart-v1'
 export const cartLineKey = (line: CartLine) => `${line.kind}:${line.product_id}:${line.offer}`
 
 export function useCart() {
+  const isOpen = useState('cart-open', () => false)
   const state = useState('purchase-cart', () => ({
+    city: '', paymentMethod: '' as RequestPaymentMethod,
     items: [] as CartLine[], submissionKey: '', pending: false, ready: false, storageFailed: false,
   }))
 
@@ -19,6 +23,7 @@ export function useCart() {
     if (!import.meta.client) return
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        city: state.value.city, paymentMethod: state.value.paymentMethod,
         items: state.value.items, submissionKey: state.value.submissionKey, pending: state.value.pending,
       }))
       state.value.storageFailed = false
@@ -30,6 +35,8 @@ export function useCart() {
     try {
       const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null')
       if (saved && Array.isArray(saved.items)) {
+        state.value.city = typeof saved.city === 'string' ? saved.city.slice(0, 150) : ''
+        state.value.paymentMethod = ['cash_moscow', 'sbp', 'usdt'].includes(saved.paymentMethod) ? saved.paymentMethod : ''
         const keys = new Set<string>()
         state.value.items = saved.items.filter((item: CartLine) => {
           if (!item || !['bike', 'goods'].includes(item.kind) || !['stock', 'order'].includes(item.offer)
@@ -75,6 +82,30 @@ export function useCart() {
     if (found && found.quantity !== value) { found.quantity = value; changed() }
   }
 
+  function setOptions(city: string, paymentMethod: RequestPaymentMethod) {
+    initialize()
+    if (state.value.city === city && state.value.paymentMethod === paymentMethod) return
+    state.value.city = city.slice(0, 150)
+    state.value.paymentMethod = paymentMethod
+    changed()
+  }
+
+  function changeOffer(line: CartLine, product: CatalogItem, offer: 'stock' | 'order') {
+    if (line.offer === offer || isGoods(product) || !product[offer]) return
+    const found = state.value.items.find((item) => cartLineKey(item) === cartLineKey(line))
+    if (!found) return
+    const other = state.value.items.find((item) => item.kind === line.kind && item.product_id === line.product_id && item.offer === offer)
+    const quantity = found.quantity + (other?.quantity ?? 0)
+    const max = offer === 'stock' ? Math.min(99, product.stock?.qty ?? 0) : 99
+    if (quantity > max) return 'Для выбранного предложения недостаточно доступного количества.'
+    if (other) {
+      other.quantity = quantity
+      state.value.items = state.value.items.filter((item) => item !== found)
+    } else found.offer = offer
+    changed()
+    return ''
+  }
+
   function remove(line: CartLine) {
     state.value.items = state.value.items.filter((item) => cartLineKey(item) !== cartLineKey(line))
     if (!state.value.items.length) state.value.pending = false
@@ -94,11 +125,15 @@ export function useCart() {
       state.value.items = []
       state.value.submissionKey = ''
       state.value.pending = false
+      state.value.city = ''
+      state.value.paymentMethod = ''
       persist()
     }
   }
 
   return {
+    isOpen, open: () => { initialize(); isOpen.value = true }, close: () => { isOpen.value = false },
+    city: computed(() => state.value.city), paymentMethod: computed(() => state.value.paymentMethod), setOptions, changeOffer,
     items: computed(() => state.value.items), count: computed(() => state.value.items.reduce((n, item) => n + item.quantity, 0)),
     pending: computed(() => state.value.pending), submissionKey: computed(() => state.value.submissionKey),
     storageFailed: computed(() => state.value.storageFailed), initialize, add, quantity, remove, beginCheckout, completed,

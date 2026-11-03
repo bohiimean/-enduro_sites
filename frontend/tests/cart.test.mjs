@@ -126,3 +126,34 @@ test('a malformed stored submission key is renewed before checkout', () => {
   cart.beginCheckout()
   assert.match(cart.submissionKey.value, /^[\da-f]{8}-[\da-f]{4}-[\da-f]{4}-[\da-f]{4}-[\da-f]{12}$/i)
 })
+
+test('delivery and payment survive auth reload and invalidate the retry key when changed', () => {
+  const { cart, storage } = environment()
+  cart.add(bike, 'stock')
+  const before = cart.submissionKey.value
+  cart.setOptions('Казань', 'usdt')
+  assert.notEqual(cart.submissionKey.value, before)
+  const same = cart.submissionKey.value
+  cart.setOptions('Казань', 'usdt')
+  assert.equal(cart.submissionKey.value, same)
+  const restored = environment(storage).cart
+  restored.initialize()
+  assert.equal(restored.city.value, 'Казань')
+  assert.equal(restored.paymentMethod.value, 'usdt')
+  restored.completed(same)
+  assert.equal(restored.city.value, '')
+  assert.equal(restored.paymentMethod.value, '')
+})
+
+test('switching offers merges rows and refuses stock overflow without losing items', () => {
+  const { cart } = environment()
+  cart.add(bike, 'stock')
+  cart.add(bike, 'order')
+  assert.equal(cart.changeOffer(cart.items.value[1], bike, 'stock'), '')
+  assert.equal(cart.items.value.length, 1)
+  assert.equal(cart.items.value[0].quantity, 2)
+  cart.add(bike, 'order')
+  assert.ok(cart.changeOffer(cart.items.value[1], bike, 'stock'))
+  assert.equal(cart.items.value.length, 2)
+  assert.equal(cart.count.value, 3)
+})
