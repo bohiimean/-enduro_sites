@@ -611,6 +611,12 @@ class CatalogAdminTests(TestCase):
 
 
 class SeedDemoTests(TestCase):
+    def test_no_products_seeds_only_reference_data(self):
+        call_command("seed_demo", no_products=True, stdout=StringIO())
+        self.assertFalse(Product.objects.exists())
+        self.assertTrue(PaymentMethod.objects.exists())
+        self.assertIsNotNone(CatalogSettings.load().rate_method)
+
     def seed(self):
         call_command("seed_demo", stdout=StringIO())
 

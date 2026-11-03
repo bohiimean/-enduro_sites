@@ -12,6 +12,16 @@ export type RequestPaymentMethod = '' | 'cash_moscow' | 'sbp' | 'usdt'
 const STORAGE_KEY = 'skl-cart-v1'
 export const cartLineKey = (line: CartLine) => `${line.kind}:${line.product_id}:${line.offer}`
 
+function submissionUuid(): string {
+  if (typeof crypto.randomUUID === 'function') return crypto.randomUUID()
+  // getRandomValues доступен и при HTTP-доступе по IP, в отличие от randomUUID.
+  const bytes = crypto.getRandomValues(new Uint8Array(16))
+  bytes[6] = (bytes[6] & 0x0f) | 0x40
+  bytes[8] = (bytes[8] & 0x3f) | 0x80
+  const hex = Array.from(bytes, (value) => value.toString(16).padStart(2, '0')).join('')
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+}
+
 export function useCart() {
   const isOpen = useState('cart-open', () => false)
   const state = useState('purchase-cart', () => ({
@@ -55,7 +65,7 @@ export function useCart() {
   }
 
   function changed() {
-    state.value.submissionKey = crypto.randomUUID()
+    state.value.submissionKey = submissionUuid()
     persist()
   }
 
@@ -115,7 +125,7 @@ export function useCart() {
   function beginCheckout() {
     initialize()
     state.value.pending = true
-    if (!state.value.submissionKey) state.value.submissionKey = crypto.randomUUID()
+    if (!state.value.submissionKey) state.value.submissionKey = submissionUuid()
     persist()
   }
 

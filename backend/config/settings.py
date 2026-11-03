@@ -152,7 +152,7 @@ ACCOUNT_PREVENT_ENUMERATION = True
 # Пустой префикс: тема письма пишется в шаблоне по-русски, «[example.com]»
 # в ней не нужен.
 ACCOUNT_EMAIL_SUBJECT_PREFIX = ""
-ACCOUNT_DEFAULT_HTTP_PROTOCOL = "http" if DEBUG else "https"
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = os.environ.get("DJANGO_HTTP_PROTOCOL", "http" if DEBUG else "https")
 # Лимиты. Живут в кеше — поэтому кеш обязан быть общим для всех процессов
 # gunicorn, см. CACHES выше.
 #
@@ -245,8 +245,8 @@ REST_FRAMEWORK = {
 # Nuxt и Django стоят за одним nginx, origin один — CORS не нужен вообще.
 SESSION_COOKIE_SAMESITE = "Lax"
 CSRF_COOKIE_SAMESITE = "Lax"
-SESSION_COOKIE_SECURE = not DEBUG
-CSRF_COOKIE_SECURE = not DEBUG
+SESSION_COOKIE_SECURE = os.environ.get("DJANGO_COOKIE_SECURE", "0" if DEBUG else "1") == "1"
+CSRF_COOKIE_SECURE = SESSION_COOKIE_SECURE
 # Остаётся False умышленно: фронтенд читает csrftoken из cookie и кладёт его
 # в заголовок X-CSRFToken. Сессия при этом httpOnly, а CSRF-токен секретом
 # не является.

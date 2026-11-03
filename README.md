@@ -9,6 +9,12 @@ Django + PostgreSQL + Nuxt 3 + nginx. Решения и обоснования �
 с каталогом, заявками, заказами, курсами, платежами и проверкой личности.
 Текст для обновления инструкции: [manager-guide.md](docs/manager-guide.md).
 
+## Развёртывание на VPS
+
+Отдельный production-стек: `docker-compose.production.yml`.
+Адреса, настройки HTTP, обслуживание и резервные копии описаны
+в [deploy/README.md](deploy/README.md).
+
 ## Запуск
 
 ```bash

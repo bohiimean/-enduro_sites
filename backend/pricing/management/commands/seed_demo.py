@@ -80,6 +80,9 @@ SUPPLY_STATUSES = [
 class Command(BaseCommand):
     help = "Заполняет справочники курса, статусы поставки и демо-каталог"
 
+    def add_arguments(self, parser):
+        parser.add_argument("--no-products", action="store_true", help="Только справочники, без демо-товаров")
+
     @transaction.atomic
     def handle(self, *args, **options):
         for code, title, description in SOURCES:
@@ -125,7 +128,7 @@ class Command(BaseCommand):
                 name=name, defaults={"sort": sort, "is_final": is_final}
             )
 
-        if not Product.objects.exists():
+        if not options["no_products"] and not Product.objects.exists():
             for brand_name, fields in DEMO_BIKES:
                 brand, _ = Brand.objects.get_or_create(name=brand_name)
                 Product.objects.create(brand=brand, **fields)

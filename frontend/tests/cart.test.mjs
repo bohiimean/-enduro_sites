@@ -10,10 +10,10 @@ const source = stripTypeScriptTypes(readFileSync(new URL('../composables/useCart
 const plain = (value) => JSON.parse(JSON.stringify(value))
 const bike = { id: 1, stock: { qty: 2, price_rub: '250000' }, order: { price_rub: '230000' } }
 const goods = { id: 1, price_rub: null, availability: 'order' }
-function environment(storage = new Map(), unavailable = false) {
+function environment(storage = new Map(), unavailable = false, http = false) {
   const states = new Map()
   const context = vm.createContext({
-    crypto: webcrypto,
+    crypto: http ? { getRandomValues: webcrypto.getRandomValues.bind(webcrypto) } : webcrypto,
     localStorage: {
       getItem: (key) => { if (unavailable) throw new Error('unavailable'); return storage.get(key) ?? null },
       setItem: (key, value) => { if (unavailable) throw new Error('unavailable'); storage.set(key, value) },
@@ -25,6 +25,20 @@ function environment(storage = new Map(), unavailable = false) {
   vm.runInContext(source + '\nglobalThis.cart = useCart();', context)
   return { cart: context.cart, storage }
 }
+
+test('HTTP without randomUUID can save the cart and submit a stable UUID v4', () => {
+  const { cart, storage } = environment(new Map(), false, true)
+  cart.add(goods, 'order')
+  const key = cart.submissionKey.value
+  assert.match(key, /^[\da-f]{8}-[\da-f]{4}-4[\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/)
+  cart.beginCheckout()
+  assert.equal(cart.submissionKey.value, key)
+  const restored = environment(storage, false, true).cart
+  restored.initialize()
+  assert.equal(restored.submissionKey.value, key)
+  cart.quantity(cart.items.value[0], 2)
+  assert.notEqual(cart.submissionKey.value, key)
+})
 
 test('bike stock, bike preorder and goods with same id are distinct rows', () => {
   const { cart } = environment()
