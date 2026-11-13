@@ -64,7 +64,7 @@ services:
     env_file: .env
     environment:
       RATE_SERVICE_TOKEN: ${RATE_SERVICE_TOKEN:-dev-token}
-      SOURCES_ENABLED: ${SOURCES_ENABLED:-rapira,alfabit_showcase}
+      SOURCES_ENABLED: ${SOURCES_ENABLED:-rapira}
     restart: unless-stopped
 
   nginx:

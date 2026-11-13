@@ -50,6 +50,8 @@ def fetch_quotes() -> int:
 
     created = 0
     for code, item in payload.items():
+        if code == RateSource.CODE_ALFABIT and not settings.ALFABIT_RATES_ENABLED:
+            continue
         value = (item or {}).get("value")
         fetched_raw = (item or {}).get("fetched_at")
         if value is None or not fetched_raw:
@@ -142,6 +144,10 @@ def build_showcase(now: datetime | None = None) -> Showcase:
         .prefetch_related("markups")
         .order_by("sort", "id")
     )
+    if not settings.ALFABIT_RATES_ENABLED:
+        queryset = queryset.exclude(source__code=RateSource.CODE_ALFABIT).exclude(
+            code=PaymentMethod.CODE_QR_KYC
+        )
 
     for method in queryset:
         price = MethodPrice(

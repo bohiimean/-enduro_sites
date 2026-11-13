@@ -260,6 +260,10 @@ RATE_SERVICE_URL = os.environ.get("RATE_SERVICE_URL", "")
 RATE_SERVICE_TOKEN = os.environ.get("RATE_SERVICE_TOKEN", "")
 RATE_REFRESH_MINUTES = int(os.environ.get("RATE_REFRESH_MINUTES", "20"))
 
+# 12.11.2026: временно считаем только по Rapira и Investing.
+# Код Alfabit сохранён для возврата интеграции отдельным решением.
+ALFABIT_RATES_ENABLED = False
+
 # --- Alfabit: приём рублей по СБП и KYC (этап 5) ------------------------------
 # Без ключей оплата на сайте выключена: API отвечает 503, остальное работает.
 ALFABIT_API_KEY = os.environ.get("ALFABIT_API_KEY", "")

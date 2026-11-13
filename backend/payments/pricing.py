@@ -145,6 +145,8 @@ def _rule_for(method: PaymentMethod, moment: datetime, rub: Decimal | None) -> M
 
 def payment_price(amount_cny: Decimal | None = None) -> PaymentPrice:
     """Цена юаня для способа «QR + KYC» прямо сейчас."""
+    if not settings.ALFABIT_RATES_ENABLED:
+        raise PriceUnavailable("оплата через Alfabit временно отключена")
     now = timezone.now()
     method = (
         PaymentMethod.objects.filter(code=PaymentMethod.CODE_QR_KYC, is_active=True)

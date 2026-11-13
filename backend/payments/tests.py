@@ -379,6 +379,7 @@ class IssueAdminTests(PaymentsTestCase):
         self.assertIsNone(unpaid.issued_at)
 
 
+@override_settings(ALFABIT_RATES_ENABLED=True)
 class PaymentPriceTests(TestCase):
     """Сумма — по свежему курсу alfabit; без него — по котировке из БД, если
     ей не больше 20 минут; иначе платёж не создаётся."""

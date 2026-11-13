@@ -2,10 +2,12 @@ from django.contrib import admin
 from unfold.admin import ModelAdmin, TabularInline
 
 from .models import MarkupRule, PaymentMethod, PricingSettings, RateQuote, RateSource
+from .forms import MarkupRuleForm
 
 
 class MarkupRuleInline(TabularInline):
     model = MarkupRule
+    form = MarkupRuleForm
     extra = 0
     fields = ("label", "kind", "value", "threshold_rub", "weekdays", "time_from", "time_to",
               "is_active", "sort")
@@ -51,10 +53,18 @@ class PaymentMethodAdmin(ModelAdmin):
 
 @admin.register(MarkupRule)
 class MarkupRuleAdmin(ModelAdmin):
-    list_display = ("method", "label", "kind", "value", "threshold_rub", "weekdays",
+    form = MarkupRuleForm
+    list_display = ("method", "label", "kind_title", "value", "threshold_rub", "weekdays",
                     "time_from", "time_to", "is_active", "sort")
     list_filter = ("method", "kind", "is_active")
     list_editable = ("value", "is_active", "sort")
+
+    def get_changelist_form(self, request, **kwargs):
+        return super().get_changelist_form(request, form=MarkupRuleForm, **kwargs)
+
+    @admin.display(description="тип наценки", ordering="kind")
+    def kind_title(self, obj):
+        return "Наценка в процентах (%)" if obj.kind == MarkupRule.KIND_MULTIPLIER else "Прибавка в рублях (₽)"
 
 
 @admin.register(PricingSettings)

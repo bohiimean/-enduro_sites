@@ -36,7 +36,7 @@ def build_cache() -> RateCache:
             logger.info("Источник включён: investing (без запасного)")
         cache.register(config.SOURCE_INVESTING, provider)
 
-    if config.SOURCE_ALFABIT in config.SOURCES_ENABLED:
+    if config.ALFABIT_RATES_ENABLED and config.SOURCE_ALFABIT in config.SOURCES_ENABLED:
         # Публичные эндпоинты витрины ключей не требуют. Ключи нужны только
         # подписанному запасному пути: без них провайдер работает, но если
         # недокументированный публичный API пропадёт — курс просто не придёт.

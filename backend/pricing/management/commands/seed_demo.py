@@ -10,6 +10,7 @@
 """
 from decimal import Decimal
 
+from django.conf import settings
 from django.core.management.base import BaseCommand
 from django.db import transaction
 
@@ -115,6 +116,12 @@ class Command(BaseCommand):
             )
 
         PricingSettings.load()
+
+        # Повторный seed также не должен включить временно отключённый курс.
+        if not settings.ALFABIT_RATES_ENABLED:
+            RateSource.objects.filter(code=RateSource.CODE_ALFABIT).update(is_active=False)
+            PaymentMethod.objects.filter(source__code=RateSource.CODE_ALFABIT).update(is_active=False)
+            PaymentMethod.objects.filter(code=PaymentMethod.CODE_QR_KYC).update(is_active=False)
 
         # Каталог считает цены по курсу QR-оплаты — той же цифре, что в шапке
         # страницы курса. Выбор, сделанный в админке, не перетираем.
