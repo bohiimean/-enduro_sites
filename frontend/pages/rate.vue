@@ -2,6 +2,11 @@
 import type { Showcase } from '~/composables/useApi'
 
 const { data, error } = await useApiFetch<Showcase>('/pricing/')
+const apiBase = useApiBase()
+const { failed: refreshFailed } = useVisibleRefresh(async () => {
+  data.value = await $fetch<Showcase>('/pricing/', { baseURL: apiBase, timeout: 10_000, retry: 0 })
+  error.value = undefined
+})
 
 useHead({ title: 'Курс юаня' })
 
@@ -22,6 +27,7 @@ const unavailable = computed(() => data.value?.methods.filter((m) => !m.availabl
 <template>
   <section>
     <h1>Курс юаня</h1>
+    <p v-if="refreshFailed" class="muted" role="status">Обновление недоступно. Показаны последние полученные значения.</p>
 
     <p v-if="error" class="card err">
       Не удалось получить курс. Попробуйте обновить страницу.

@@ -50,6 +50,8 @@ def fetch_quotes() -> int:
 
     created = 0
     for code, item in payload.items():
+        if code == RateSource.CODE_INVESTING and not settings.INVESTING_RATES_ENABLED:
+            continue
         if code == RateSource.CODE_ALFABIT and not settings.ALFABIT_RATES_ENABLED:
             continue
         value = (item or {}).get("value")
@@ -148,6 +150,9 @@ def build_showcase(now: datetime | None = None) -> Showcase:
         queryset = queryset.exclude(source__code=RateSource.CODE_ALFABIT).exclude(
             code=PaymentMethod.CODE_QR_KYC
         )
+
+    if not settings.INVESTING_RATES_ENABLED:
+        queryset = queryset.exclude(source__code=RateSource.CODE_INVESTING)
 
     for method in queryset:
         price = MethodPrice(

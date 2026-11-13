@@ -75,16 +75,16 @@ def build_scheduler() -> BlockingScheduler:
         scheduler.add_job(
             _refresh_quotes,
             trigger="interval",
-            minutes=settings.RATE_REFRESH_MINUTES,
+            seconds=settings.RATE_REFRESH_SECONDS,
             id="refresh_quotes",
             replace_existing=True,
             max_instances=1,
             coalesce=True,
             # Первый заход сразу после старта: иначе после перезапуска витрина
-            # до двадцати минут показывала бы вчерашнюю цену.
+            # ждала бы следующего интервала обновления.
             next_run_time=datetime.now(),
         )
-        logger.info("Обновление котировок: каждые %d мин", settings.RATE_REFRESH_MINUTES)
+        logger.info("Обновление котировок: каждые %d сек", settings.RATE_REFRESH_SECONDS)
     else:
         logger.warning("RATE_SERVICE_URL не задан — котировки обновляться не будут")
 

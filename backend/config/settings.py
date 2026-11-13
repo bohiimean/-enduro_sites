@@ -258,11 +258,13 @@ SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 # Фоновые задачи (worker). На этапе 1 расписание пустое.
 RATE_SERVICE_URL = os.environ.get("RATE_SERVICE_URL", "")
 RATE_SERVICE_TOKEN = os.environ.get("RATE_SERVICE_TOKEN", "")
-RATE_REFRESH_MINUTES = int(os.environ.get("RATE_REFRESH_MINUTES", "20"))
+RATE_REFRESH_SECONDS = max(10, int(os.environ.get("RATE_REFRESH_SECONDS", "30")))
 
 # 12.11.2026: временно считаем только по Rapira и Investing.
 # Код Alfabit сохранён для возврата интеграции отдельным решением.
 ALFABIT_RATES_ENABLED = False
+# 13.11.2026: наличные также считаются от Rapira.
+INVESTING_RATES_ENABLED = False
 
 # --- Alfabit: приём рублей по СБП и KYC (этап 5) ------------------------------
 # Без ключей оплата на сайте выключена: API отвечает 503, остальное работает.

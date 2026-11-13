@@ -1,4 +1,7 @@
 import logging
+import time
+from datetime import datetime, timezone
+from email.utils import parsedate_to_datetime
 from decimal import Decimal
 
 import aiohttp
@@ -19,9 +22,27 @@ class RapiraProvider(RateProvider):
     сервис курсов отдаёт только то, что сказал источник.
     """
 
+    def __init__(self):
+        self._retry_at = 0.0
+
     async def get_rate(self) -> Decimal:
+        if time.monotonic() < self._retry_at:
+            raise RuntimeError("Rapira: пауза после ограничения API")
         async with aiohttp.ClientSession() as session:
             async with session.get(_API_URL, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+                if resp.status in (429, 403):
+                    # Не усиливаем блокировку повторами. Retry-After бывает
+                    # числом секунд либо HTTP-датой; без него ждём 5 минут.
+                    retry = resp.headers.get("Retry-After", "")
+                    delay = 300.0
+                    try:
+                        delay = max(delay, float(retry))
+                    except ValueError:
+                        try:
+                            delay = max(delay, (parsedate_to_datetime(retry) - datetime.now(timezone.utc)).total_seconds())
+                        except (ValueError, TypeError, OverflowError):
+                            pass
+                    self._retry_at = time.monotonic() + delay
                 resp.raise_for_status()
                 data = await resp.json()
 
@@ -33,4 +54,7 @@ class RapiraProvider(RateProvider):
         raw = pair.get("close") or (
             (Decimal(str(pair["bidPrice"])) + Decimal(str(pair["askPrice"]))) / 2
         )
-        return Decimal(str(raw))
+        value = Decimal(str(raw))
+        if not value.is_finite() or value <= 0:
+            raise ValueError("Rapira: некорректная котировка")
+        return value

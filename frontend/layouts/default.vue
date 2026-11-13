@@ -1,9 +1,16 @@
 <script setup lang="ts">
+import type { CatalogTerms } from '~/composables/useApi'
 const route = useRoute()
 const telegram = useRuntimeConfig().public.managerTelegram
 
 // Цена юаня в верхней строке — та же, от которой считаются цены каталога.
 const { data: terms } = useCatalogTerms()
+const apiBase = useApiBase()
+const { failed: rateRefreshFailed } = useVisibleRefresh(async () => {
+  terms.value = await $fetch<CatalogTerms>('/catalog/terms/', { baseURL: apiBase, timeout: 10_000, retry: 0 })
+})
+const rateAt = computed(() => terms.value?.rate
+  ? new Date(terms.value.rate.fetched_at).toLocaleString('ru-RU', { timeZone: 'Europe/Moscow' }) : '')
 const yuan = computed(() => (terms.value?.rate ? yuanPrice(terms.value.rate.price_per_cny) : ''))
 
 const cart = useCart()
@@ -19,6 +26,8 @@ const year = new Date().getFullYear()
           <template v-if="yuan">
             <span class="sep" aria-hidden="true">|</span>
             <NuxtLink to="/rate">Курс юаня: <b>{{ yuan }}</b></NuxtLink>
+            <span v-if="rateAt">на {{ rateAt }} МСК</span>
+            <span v-if="rateRefreshFailed" role="status">Не удалось обновить курс</span>
           </template>
         </div>
         <a v-if="telegram" :href="`https://t.me/${telegram}`" target="_blank" rel="noopener">

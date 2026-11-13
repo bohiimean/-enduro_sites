@@ -11,21 +11,28 @@ export function useCartCatalog() {
   let revision = 0
   const identities = computed(() => [...new Set(cart.items.value.map((i) => `${i.kind}:${i.product_id}`))].join(','))
 
-  async function refresh() {
+  async function refresh(quiet = false) {
     const current = ++revision
-    loading.value = true
-    error.value = ''
+    if (!quiet) loading.value = true
+    let failed = false
     const entries = await Promise.all(identities.value.split(',').filter(Boolean).map(async (key) => {
       const [kind, id] = key.split(':')
       try {
-        const product = await $fetch<Product | Goods>(`/catalog/${kind === 'bike' ? 'products' : 'goods'}/by-id/${id}/`, { baseURL })
+        const product = await $fetch<Product | Goods>(`/catalog/${kind === 'bike' ? 'products' : 'goods'}/by-id/${id}/`, { baseURL, timeout: 10_000, retry: 0 })
         return [key, product] as const
       } catch (e) {
-        if ((e as { statusCode?: number }).statusCode !== 404 && current === revision) error.value = 'Не удалось обновить корзину. Попробуйте ещё раз.'
+        if ((e as { statusCode?: number }).statusCode !== 404) {
+          failed = true
+          return [key, products.value[key] ?? null] as const
+        }
         return [key, null] as const
       }
     }))
-    if (current === revision) { products.value = Object.fromEntries(entries); loading.value = false }
+    if (current === revision) {
+      products.value = Object.fromEntries(entries)
+      error.value = failed ? 'Не удалось обновить корзину. Попробуйте ещё раз.' : ''
+      loading.value = false
+    }
   }
 
   const rows = computed(() => cart.items.value.map((line) => {
@@ -40,6 +47,7 @@ export function useCartCatalog() {
     : rows.value.reduce((sum, row) => sum + Number(row.price) * row.line.quantity, 0).toFixed(2))
 
   onMounted(() => { cart.initialize(); refresh() })
-  watch(identities, refresh)
-  return { rows, loading, error, valid, total, refresh }
+  watch(identities, () => refresh())
+  useVisibleRefresh(() => refresh(true), false)
+  return { rows, loading, error, valid, total, refresh: () => refresh() }
 }

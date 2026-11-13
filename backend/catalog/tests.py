@@ -180,6 +180,7 @@ class CatalogRateTests(TestCase):
         self.assertEqual(current_rate(config, now=now).price_per_cny, D("13.81"))
         self.assertIsNone(current_rate(config, now=now + timedelta(hours=2)))
 
+    @override_settings(INVESTING_RATES_ENABLED=True)
     def test_base_tier_of_the_day_and_never_the_threshold_tiers(self):
         source = RateSource.objects.create(code=RateSource.CODE_INVESTING, title="Investing")
         cash = PaymentMethod.objects.create(

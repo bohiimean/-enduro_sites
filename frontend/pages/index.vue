@@ -56,14 +56,32 @@ const markup = computed(() => {
 const more = ref<Product[]>([])
 const loadingMore = ref(false)
 const moreFailed = ref(false)
-watch(data, () => {
+watch([availability, powertrain], () => {
   more.value = []
   moreFailed.value = false
 })
 const products = computed(() => [...(data.value?.results ?? []), ...more.value])
 const hasMore = computed(() => products.value.length < (data.value?.count ?? 0))
 
+let refreshingPrices = false
+const { failed: priceRefreshFailed } = useVisibleRefresh(async () => {
+  if (goodsSection.value || loadingMore.value) return
+  const filters = { availability: availability.value, powertrain: powertrain.value }
+  refreshingPrices = true
+  try {
+    const page = await $fetch<Paginated<Product>>('/catalog/products/', {
+      baseURL: apiBase, query: { ...filters, limit: Math.max(products.value.length, 20) },
+      timeout: 10_000, retry: 0,
+    })
+    if (filters.availability !== availability.value || filters.powertrain !== powertrain.value) return
+    data.value = { ...page, results: page.results.slice(0, 20) }
+    more.value = page.results.slice(20)
+    error.value = undefined
+  } finally { refreshingPrices = false }
+})
+
 async function loadMore() {
+  if (refreshingPrices || loadingMore.value) return
   const filters = { availability: availability.value, powertrain: powertrain.value }
   loadingMore.value = true
   moreFailed.value = false
@@ -194,6 +212,7 @@ watch([availability, powertrain], () => {
       </div>
 
       <template v-else>
+        <p v-if="priceRefreshFailed" class="muted" role="status">Не удалось обновить цены. Показаны последние полученные значения.</p>
         <ul class="cards">
           <li v-for="product in products" :key="product.id">
             <ProductCard :product="product" :prefer="availability" @open="openBike(product)" />

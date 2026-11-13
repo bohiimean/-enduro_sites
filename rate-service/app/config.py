@@ -14,9 +14,11 @@ SOURCE_ALFABIT = "alfabit_showcase"
 ALL_SOURCES = (SOURCE_RAPIRA, SOURCE_INVESTING, SOURCE_ALFABIT)
 # 12.11.2026: Alfabit временно отключён, в том числе при старом SOURCES_ENABLED.
 ALFABIT_RATES_ENABLED = False
+# 13.11.2026: Investing временно отключён; Chromium не запускается.
+INVESTING_RATES_ENABLED = False
 
-SOURCES_ENABLED = _list("SOURCES_ENABLED", f"{SOURCE_RAPIRA},{SOURCE_INVESTING}")
-REFRESH_MINUTES = int(os.environ.get("REFRESH_MINUTES", "20"))
+SOURCES_ENABLED = _list("SOURCES_ENABLED", SOURCE_RAPIRA)
+REFRESH_SECONDS = max(90, int(os.environ.get("REFRESH_SECONDS", "90")))
 
 CHROME_BINARY_PATH = os.environ.get("CHROME_BINARY_PATH") or None
 TWELVEDATA_API_KEY = os.environ.get("TWELVEDATA_API_KEY") or None

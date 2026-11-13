@@ -5,6 +5,17 @@ definePageMeta({ fullWidth: true })
 
 const route = useRoute()
 const { data: product, error } = await useApiFetch<Product>(`/catalog/products/${route.params.slug}/`)
+const apiBase = useApiBase()
+const { failed: priceRefreshFailed } = useVisibleRefresh(async () => {
+  const slug = route.params.slug
+  try {
+    const current = await $fetch<Product>(`/catalog/products/${slug}/`, { baseURL: apiBase, timeout: 10_000, retry: 0 })
+    if (slug === route.params.slug) { product.value = current; error.value = undefined }
+  } catch (e) {
+    if ((e as { statusCode?: number }).statusCode === 404 && slug === route.params.slug) product.value = null
+    throw e
+  }
+})
 
 const missing = computed(() => error.value?.statusCode === 404)
 
@@ -19,6 +30,7 @@ useSeoMeta({ description: () => product.value?.tagline || undefined })
   <div class="container product-page">
     <NuxtLink to="/" class="back">← Каталог</NuxtLink>
 
+    <p v-if="priceRefreshFailed && product" class="muted" role="status">Не удалось обновить цену. Показано последнее полученное значение.</p>
     <ProductDetails v-if="product" :product="product" />
 
     <section v-else class="missing">

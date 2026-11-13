@@ -24,7 +24,7 @@ def build_cache() -> RateCache:
         cache.register(config.SOURCE_RAPIRA, RapiraProvider())
         logger.info("Источник включён: rapira")
 
-    if config.SOURCE_INVESTING in config.SOURCES_ENABLED:
+    if config.INVESTING_RATES_ENABLED and config.SOURCE_INVESTING in config.SOURCES_ENABLED:
         provider: RateProvider = InvestingComProvider(chrome_binary=config.CHROME_BINARY_PATH)
         if config.TWELVEDATA_API_KEY:
             provider = FallbackProvider(
@@ -73,7 +73,7 @@ def build_scheduler(cache: RateCache) -> AsyncIOScheduler:
         scheduler.add_job(
             cache.refresh,
             trigger="interval",
-            minutes=config.REFRESH_MINUTES,
+            seconds=config.REFRESH_SECONDS,
             args=[key],
             id=f"refresh:{key}",
             replace_existing=True,

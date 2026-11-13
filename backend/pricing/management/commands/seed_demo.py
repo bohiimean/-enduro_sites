@@ -1,13 +1,4 @@
-"""Справочники и демо-данные.
-
-Наценки заводятся **ровно те, по которым считает прод бота сегодня**, включая
-окна действия — то есть без них: в `bot/services/usd_markup.py` проверки
-времени нет, уровни отдаются в любой час буднего дня. Текст бота при этом
-обещает «VIP курс с 12:30 до 16:00». Это расхождение зафиксировано в CLAUDE.md
-как открытый вопрос, и заполнять окно здесь наугад нельзя — данные должны
-совпадать с тем, что происходит в проде. Когда клиент подтвердит окно, оно
-проставляется в админке в полях «действует с/до», код менять не нужно.
-"""
+"""Справочники и демо-данные. С 13.11.2026 QR и наличные — от Rapira."""
 from decimal import Decimal
 
 from django.conf import settings
@@ -30,22 +21,16 @@ METHODS = [
     (PaymentMethod.CODE_QR_KYC, "QR + KYC", RateSource.CODE_ALFABIT, 20,
      "Верификация по фото паспорта, 18+. Данные при регистрации должны совпадать "
      "с данными отправителя средств в банке. Может не работать с Альфа-Банком и Озоном."),
-    (PaymentMethod.CODE_CASH_MOSCOW, "Наличные в Москве", RateSource.CODE_INVESTING, 30,
-     "Плюс дистанционное снятие по QR с вашего банка."),
+    (PaymentMethod.CODE_CASH_MOSCOW, "Наличные в Москве", RateSource.CODE_RAPIRA, 30,
+     "Курс приблизительный, итоговую сумму подтвердит менеджер."),
 ]
 
 # (способ, подпись, тип, значение, порог, дни недели, порядок)
 MARKUPS = [
     (PaymentMethod.CODE_QR, "Стандарт", MarkupRule.KIND_MULTIPLIER, "1.045", None, "", 10),
     (PaymentMethod.CODE_QR_KYC, "Стандарт", MarkupRule.KIND_MULTIPLIER, "1.0175", None, "", 10),
-    # Наличные: прибавка в рублях к курсу USD/RUB, будни и выходные различаются.
-    (PaymentMethod.CODE_CASH_MOSCOW, "Стандарт", MarkupRule.KIND_RUB_ADD, "2.6", None, "12345", 10),
-    (PaymentMethod.CODE_CASH_MOSCOW, "от 300 000 ₽", MarkupRule.KIND_RUB_ADD, "2.1", "300000", "12345", 20),
-    (PaymentMethod.CODE_CASH_MOSCOW, "от 500 000 ₽", MarkupRule.KIND_RUB_ADD, "1.7", "500000", "12345", 30),
-    (PaymentMethod.CODE_CASH_MOSCOW, "от 1 000 000 ₽", MarkupRule.KIND_RUB_ADD, "1.5", "1000000", "12345", 40),
-    (PaymentMethod.CODE_CASH_MOSCOW, "Стандарт", MarkupRule.KIND_RUB_ADD, "2.7", None, "67", 50),
-    (PaymentMethod.CODE_CASH_MOSCOW, "от 300 000 ₽", MarkupRule.KIND_RUB_ADD, "2.5", "300000", "67", 60),
-    (PaymentMethod.CODE_CASH_MOSCOW, "от 500 000 ₽", MarkupRule.KIND_RUB_ADD, "2.1", "500000", "67", 70),
+    # Как в боте: чистый Rapira + 1,15 ₽, без порогов и дней недели.
+    (PaymentMethod.CODE_CASH_MOSCOW, "Стандарт", MarkupRule.KIND_RUB_ADD, "1.15", None, "", 10),
 ]
 
 # По карточке на ДВС и электро, чтобы были видны оба набора характеристик.
@@ -122,6 +107,9 @@ class Command(BaseCommand):
             RateSource.objects.filter(code=RateSource.CODE_ALFABIT).update(is_active=False)
             PaymentMethod.objects.filter(source__code=RateSource.CODE_ALFABIT).update(is_active=False)
             PaymentMethod.objects.filter(code=PaymentMethod.CODE_QR_KYC).update(is_active=False)
+
+        if not settings.INVESTING_RATES_ENABLED:
+            RateSource.objects.filter(code=RateSource.CODE_INVESTING).update(is_active=False)
 
         # Каталог считает цены по курсу QR-оплаты — той же цифре, что в шапке
         # страницы курса. Выбор, сделанный в админке, не перетираем.
